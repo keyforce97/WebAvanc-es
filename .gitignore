@@ -1,0 +1,11 @@
+# Environnement virtuel
+.venv/
+
+# Fichiers temporaires
+__pycache__/
+
+# Fichiers de base de données
+*.db
+
+# Configs sensibles
+*.env
