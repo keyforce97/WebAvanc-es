@@ -3,3 +3,9 @@ peewee
 requests
 pytest
 pytest-flask
+psycopg2-binary
+redis
+rq
+gunicorn
+
+

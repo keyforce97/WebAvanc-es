@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Commandes - Test API</title>
+</head>
+<body>
+    <h1>Créer une commande</h1>
+    <form action="/order" method="post" id="orderForm">
+        <label>Produits (JSON):<br>
+            <textarea name="products" rows="4" cols="50">[{"id": 1, "quantity": 2}]</textarea>
+        </label><br>
+        <button type="submit">Créer</button>
+    </form>
+    <h1>Afficher une commande</h1>
+    <form action="#" method="get" id="getOrderForm">
+        <label>ID commande : <input type="number" name="order_id"></label>
+        <button type="submit">Afficher</button>
+    </form>
+    <h1>Payer une commande</h1>
+    <form action="/order" method="post" id="payOrderForm">
+        <label>ID commande : <input type="number" name="order_id"></label><br>
+        <label>Carte (JSON):<br>
+            <textarea name="credit_card" rows="4" cols="50">{"name": "John Doe", "number": "4242424242424242", "expiration_year": 2024, "expiration_month": 9, "cvv": "123"}</textarea>
+        </label><br>
+        <button type="submit">Payer</button>
+    </form>
+    <script>
+    // JS pour envoyer les requêtes en AJAX (POST/PUT)
+    document.getElementById('orderForm').onsubmit = async function(e) {
+        e.preventDefault();
+        const products = JSON.parse(this.products.value);
+        const res = await fetch('/order', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({products})
+        });
+        alert(await res.text());
+    };
+    document.getElementById('payOrderForm').onsubmit = async function(e) {
+        e.preventDefault();
+        const order_id = this.order_id.value;
+        const credit_card = JSON.parse(this.credit_card.value);
+        const res = await fetch('/order/' + order_id, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({credit_card})
+        });
+        alert(res.status === 202 ? 'Paiement en cours...' : await res.text());
+    };
+    document.getElementById('getOrderForm').onsubmit = async function(e) {
+        e.preventDefault();
+        const order_id = this.order_id.value;
+        const res = await fetch('/order/' + order_id);
+        alert(await res.text());
+    };
+    </script>
+</body>
+</html>

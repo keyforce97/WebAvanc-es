@@ -1,10 +1,23 @@
 from peewee import *
 import os
-# si tu passes à Postgres, importe PostgresqlDatabase depuis playhouse ou config.py
-# from playhouse.postgres_ext import PostgresqlExtDatabase
-# db = PostgresqlDatabase(...)
+from playhouse.postgres_ext import PostgresqlExtDatabase
 
-db = SqliteDatabase('database.db')  # ou PostgresqlDatabase via config.py
+# variables pour connexion PostgreSQL
+DB_HOST = os.environ.get('DB_HOST', 'localhost')
+DB_USER = os.environ.get('DB_USER', 'user')
+DB_PASSWORD = os.environ.get('DB_PASSWORD', 'pass') 
+DB_PORT = os.environ.get('DB_PORT', '5432')
+DB_NAME = os.environ.get('DB_NAME', 'database')
+
+# Connexion à la base PostgreSQL
+# Utilise PostgresqlExtDatabase pour la compatibilité JSON, etc.
+db = PostgresqlExtDatabase(
+    DB_NAME,
+    user=DB_USER,
+    password=DB_PASSWORD,
+    host=DB_HOST,
+    port=DB_PORT
+)
 
 class BaseModel(Model):
     class Meta:

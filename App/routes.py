@@ -1,13 +1,14 @@
-from flask import Blueprint, jsonify, request, redirect, url_for
+from flask import Blueprint, jsonify, request, redirect, url_for, render_template
 from peewee import DoesNotExist 
 from App.models import Order, DoesNotExist
 from .models import Product, Order
 import json 
 import requests
 
-
 # Définition du Blueprint
 bp = Blueprint('routes', __name__)
+
+
 
 # ---------------------------------
 # GET / - Liste des produits
@@ -33,343 +34,181 @@ def get_products():
 @bp.route('/order', methods=['POST'])
 def create_order():
     data = request.get_json()
- 
-    # Vérifie si "product" est présent
-    if not data or 'product' not in data:
-        return jsonify({
-            "errors": {
-                "product": {
-                    "code": "missing-fields",
-                    "name": "La création d'une commande nécessite un produit 1"
-                }
-            }
-        }), 422
-
-    product_data = data['product']
-
-    # Vérifie la présence des champs 'id' et 'quantity'
-    if 'id' not in product_data or 'quantity' not in product_data:
-        return jsonify({
-            "errors": {
-                "product": {
-                    "code": "missing-fields",
-                    "name": "La création d'une commande nécessite un produit 2"
-                }
-            }
-        }), 422
-
-    product_id = product_data['id']
-    quantity = product_data['quantity']
-    
-    
-    if quantity < 1:
-        return jsonify({
-            "errors": {
-                "product": {
-                    "code": "missing-fields",
-                    "name": "La quantité doit être supérieure ou égale à 1"
-                }
-            }
-        }), 422
-
-    # Vérifie si le produit existe
-    try:
-        product = Product.get(Product.id == product_id)
-    except DoesNotExist:
-        return jsonify({
-            "errors": {
-                "product": {
-                    "code": "not-found",
-                    "name": "Le produit demandé n'existe pas"
-                }
-            }
-        }), 422
-
-    # Vérifie si le produit est en stock
-    if not product.in_stock:
-        return jsonify({
-            "errors": {
-                "product": {
-                    "code": "out-of-inventory",
-                    "name": "Le produit demandé n'est pas en inventaire"
-                }
-            }
-        }), 422
-
-    # Crée la commande
-    order = Order.create(
-        product_id=product.id,
-        quantity=quantity
-    )
-
-    return redirect(url_for('routes.get_order', order_id=order.id), code=302)
-
-@bp.route('/order/<int:order_id>', methods=['GET'])
-def get_order(order_id):
-    try:
-        order = Order.get(Order.id == order_id)
-        response = {
-            "order": {
-                "id": order.id,
-                "total_price": order.total_price,
-                "total_price_tax": order.total_price_tax,
-                "email": order.email,
-                "credit_card": {},
-                "shipping_information": {},
-                "paid": order.paid,
-                "transaction": {},
-                "product": {
-                    "id": order.product_id,
-                    "quantity": order.quantity
-                },
-                "shipping_price": order.shipping_price
-            }
-        }
-        return jsonify(response), 200
-    except DoesNotExist:
-        return jsonify({
-            "errors": {
-                "order": {
-                    "code": "not-found",
-                    "name": "La commande n'existe pas"
-                }
-            }
-        }), 404
-
-@bp.route('/order/<int:order_id>', methods=['PUT'])
-def update_order(order_id):
-    data = request.get_json()
-
-    if not data or 'order' not in data:
-        return jsonify({
-            "errors": {
-                "order": {
-                    "code": "missing-fields",
-                    "name": "Il manque un ou plusieurs champs qui sont obligatoires 4"
-                }
-            }
-        }), 422
-
-    order_data = data['order']
-    required_fields = ['email', 'shipping_information']
-    shipping_required = ['country', 'address', 'postal_code', 'city', 'province']
-
-    # Vérifie les champs requis
-    for field in required_fields:
-        if field not in order_data:
+    # On accepte 'products' (liste) ou 'product' (rétrocompatibilité)
+    products = data.get('products')
+    if not products:
+        # Rétrocompatibilité : un seul produit
+        product = data.get('product')
+        if not product:
             return jsonify({
-                "errors": {
-                    "order": {
-                        "code": "missing-fields",
-                        "name": "Il manque un ou plusieurs champs qui sont obligatoires 3"
-                    }
-                }
+                "errors": {"product": {"code": "missing-fields", "name": "Aucun produit fourni"}}
             }), 422
-
-    shipping_info = order_data['shipping_information']
-    for field in shipping_required:
-        if field not in shipping_info:
+        products = [product]
+    # Vérification des produits
+    order_products = []
+    total_price = 0
+    total_weight = 0
+    for p in products:
+        if 'id' not in p or 'quantity' not in p or p['quantity'] < 1:
             return jsonify({
-                "errors": {
-                    "order": {
-                        "code": "missing-fields",
-                        "name": "Il manque un ou plusieurs champs qui sont obligatoires 5"
-                    }
-                }
+                "errors": {"product": {"code": "missing-fields", "name": "Produit ou quantité manquante"}}
             }), 422
-
-    try:
-        order = Order.get(Order.id == order_id)
-    except DoesNotExist:
-        return jsonify({
-            "errors": {
-                "order": {
-                    "code": "not-found",
-                    "name": "La commande n'existe pas"
-                }
-            }
-        }), 404
-
-    # Calcul des prix
-    product = Product.get(Product.id == order.product_id)
-    total_price = product.price * order.quantity
-
-    # Calcul shipping
-    weight = product.weight * order.quantity
-    if weight <= 500:
+        try:
+            prod = Product.get(Product.id == p['id'])
+        except DoesNotExist:
+            return jsonify({
+                "errors": {"product": {"code": "not-found", "name": f"Produit {p['id']} introuvable"}}
+            }), 422
+        if not prod.in_stock:
+            return jsonify({
+                "errors": {"product": {"code": "out-of-inventory", "name": f"Produit {p['id']} hors stock"}}
+            }), 422
+        order_products.append((prod, p['quantity']))
+        total_price += prod.price * p['quantity']
+        total_weight += prod.weight * p['quantity']
+    # Calcul du shipping
+    if total_weight <= 500:
         shipping_price = 500
-    elif weight <= 2000:
+    elif total_weight <= 2000:
         shipping_price = 1000
     else:
         shipping_price = 2500
+    # Création de la commande
+    order = Order.create(
+        shipping_price=shipping_price,
+        total_price=total_price,
+        paid=False
+    )
+    # Ajout des produits à la commande
+    from .models import OrderProduct
+    for prod, qty in order_products:
+        OrderProduct.create(order=order, product=prod, quantity=qty)
+    return redirect(url_for('routes.get_order', order_id=order.id), code=302)
 
+def is_payment_in_progress(redis_client, order_id):
+    return redis_client.get(f'order:{order_id}:paying')
+
+@bp.route('/order/<int:order_id>', methods=['GET'])
+def get_order(order_id):
+    from .redis_client import redis_client
+    import json
+    # Vérifier si paiement en cours (flag Redis)
+    if is_payment_in_progress(redis_client, order_id):
+        return '', 202
+    # Vérifier d'abord dans Redis
+    cached = redis_client.get(f'order:{order_id}')
+    if cached:
+        order_data = json.loads(cached)
+        return jsonify({"order": order_data}), 200
+    # Sinon, lire dans la base
+    try:
+        order = Order.get(Order.id == order_id)
+    except DoesNotExist:
+        return jsonify({"errors": {"order": {"code": "not-found", "name": "La commande n'existe pas"}}}), 404
+    # Récupérer les produits
+    from .models import OrderProduct
+    products = [
+        {"id": op.product.id, "quantity": op.quantity}
+        for op in OrderProduct.select().where(OrderProduct.order == order)
+    ]
+    shipping_info = json.loads(order.shipping_information) if order.shipping_information else {}
+    credit_card = json.loads(order.credit_card) if order.credit_card else {}
+    transaction = json.loads(order.transaction) if order.transaction else {}
+    response = {
+        "order": {
+            "id": order.id,
+            "total_price": order.total_price,
+            "email": order.email,
+            "credit_card": credit_card if order.paid else {},
+            "shipping_information": shipping_info,
+            "paid": order.paid,
+            "transaction": transaction if order.paid else {},
+            "products": products,
+            "shipping_price": order.shipping_price
+        }
+    }
+    return jsonify(response), 200
+
+@bp.route('/order/<int:order_id>', methods=['PUT'])
+def update_order(order_id):
+    """
+    Met à jour la commande (email, shipping) et lance le paiement en tâche de fond si credit_card présent.
+    Retourne 202 si paiement en cours, 409 si déjà payé, 200 sinon.
+    """
+    from .models import OrderProduct
+    from .services import process_payment
+    from .redis_client import redis_client
+    from rq import Queue
+    import json
+    data = request.get_json()
+    if not data:
+        return jsonify({"errors": {"order": {"code": "missing-fields", "name": "Aucune donnée reçue"}}}), 422
+    # Récupérer la commande
+    try:
+        order = Order.get(Order.id == order_id)
+    except DoesNotExist:
+        return jsonify({"errors": {"order": {"code": "not-found", "name": "La commande n'existe pas"}}}), 404
+    # Si déjà payée, on ne peut plus modifier
+    if order.paid:
+        return '', 409
+    # Si paiement en cours (vérifier le flag Redis)
+    if is_payment_in_progress(redis_client, order_id):
+        return '', 202
+    # Mettre à jour email et shipping si présents
+    email = data.get('email')
+    shipping_info = data.get('shipping_information')
+    if email:
+        order.email = email
+    if shipping_info:
+        order.shipping_information = json.dumps(shipping_info)
+    # Recalculer prix total et shipping
+    products = OrderProduct.select().where(OrderProduct.order == order)
+    total_price = sum(op.product.price * op.quantity for op in products)
+    total_weight = sum(op.product.weight * op.quantity for op in products)
+    if total_weight <= 500:
+        shipping_price = 500
+    elif total_weight <= 2000:
+        shipping_price = 1000
+    else:
+        shipping_price = 2500
+    order.total_price = total_price
+    order.shipping_price = shipping_price
     # Calcul taxe selon la province
-    province = shipping_info['province']
+    province = shipping_info['province'] if shipping_info and 'province' in shipping_info else ''
     tax_rates = {"QC": 0.15, "ON": 0.13, "AB": 0.05, "BC": 0.12, "NS": 0.14}
     tax_rate = tax_rates.get(province, 0)
-    total_price_tax = round(total_price * (1 + tax_rate), 2)
-
-    # Mise à jour de la commande
-    order.email = order_data['email']
-    order.shipping_information = json.dumps(shipping_info)
-    order.shipping_price = shipping_price
-    order.total_price = total_price
-    order.total_price_tax = total_price_tax
+    order.total_price_tax = round(total_price * (1 + tax_rate), 2)
     order.save()
-
-    # Retourner la commande mise à jour
+    # Si credit_card présent, lancer le paiement en tâche de fond
+    credit_card = data.get('credit_card')
+    if credit_card:
+        # On peut marquer la commande comme "en cours de paiement" (champ à ajouter si besoin)
+        # Lancer la tâche RQ
+        q = Queue(connection=redis_client)
+        q.enqueue(process_payment, order.id, credit_card)
+        return '', 202
+    # Sinon, retour normal
     response = {
         "order": {
             "id": order.id,
             "email": order.email,
-            "shipping_information": shipping_info,
+            "shipping_information": json.loads(order.shipping_information) if order.shipping_information else {},
             "credit_card": {},
             "paid": order.paid,
             "transaction": {},
-            "product": {
-                "id": order.product_id,
-                "quantity": order.quantity
-            },
-            "shipping_price": shipping_price,
-            "total_price": total_price,
-            "total_price_tax": total_price_tax
+            "products": [
+                {"id": op.product.id, "quantity": op.quantity} for op in products
+            ],
+            "shipping_price": order.shipping_price,
+            "total_price": order.total_price,
+            "total_price_tax": order.total_price_tax
         }
     }
-
     return jsonify(response), 200
 
+# La route /order/<order_id>/pay n'est plus nécessaire car le paiement se fait via PUT /order/<order_id>
+# On la retire pour éviter toute confusion.
 
-# ---------------------------------
-# PUT / - Paiement
-# ---------------------------------
-@bp.route('/order/<int:order_id>/pay', methods=['PUT'])
-def pay_order(order_id):
-    import json
-    from flask import request, jsonify
-    from App.models import Order, DoesNotExist
-    import requests
-
-    data = request.get_json()
-
-    # Vérification du JSON reçu
-    if not data or 'credit_card' not in data:
-        return jsonify({
-            "errors": {
-                "order": {
-                    "code": "missing-fields",
-                    "name": "Il manque un ou plusieurs champs qui sont obligatoires"
-                }
-            }
-        }), 422
-
-    credit_card = data['credit_card']
-    required_fields = ['name', 'number', 'expiration_year', 'expiration_month', 'cvv']
-
-    for field in required_fields:
-        if field not in credit_card:
-            return jsonify({
-                "errors": {
-                    "order": {
-                        "code": "missing-fields",
-                        "name": "Il manque un ou plusieurs champs qui sont obligatoires"
-                    }
-                }
-            }), 422
-
-    try:
-        order = Order.get(Order.id == order_id)
-    except DoesNotExist:
-        return jsonify({
-            "errors": {
-                "order": {
-                    "code": "not-found",
-                    "name": "La commande n'existe pas"
-                }
-            }
-        }), 404
-
-    if order.paid:
-        return jsonify({
-            "errors": {
-                "order": {
-                    "code": "already-paid",
-                    "name": "La commande est déjà payée"
-                }
-            }
-        }), 422
-
-    # Construire la requête à envoyer à l'API externe
-    payload = {
-        "credit_card": {
-            "name": credit_card["name"],
-            "number": credit_card["number"],
-            "expiration_year": int(credit_card["expiration_year"]),
-            "cvv": credit_card["cvv"],
-            "expiration_month": int(credit_card["expiration_month"])
-        },
-        "amount_charged": order.total_price_tax + order.shipping_price
-    }
-
-    print("Payload envoyé à l'API externe :", json.dumps(payload, indent=2))
-
-    try:
-        response = requests.post("https://dimensweb.uqac.ca/~jgnault/shops/pay/", json=payload)
-        result = response.json()
-        print("Réponse brute API externe :", json.dumps(result, indent=2))
-
-        if response.status_code != 200:
-            return jsonify({
-                "errors": {
-                    "order": {
-                        "code": "payment-failed",
-                        "name": "Erreur lors du paiement"
-                    }
-                }
-            }), 422
-
-        if "errors" in result:
-            return jsonify({
-                "errors": {
-                    "order": {
-                        "code": result['errors']['credit_card']['code'],
-                        "name": result['errors']['credit_card']['name']
-                    }
-                }
-            }), 422
-
-        # Mettre à jour la commande
-        order.paid = True
-        order.credit_card = json.dumps(result['credit_card'])
-        order.transaction = json.dumps(result['transaction'])
-        order.save()
-
-        response_data = {
-            "order": {
-                "id": order.id,
-                "email": order.email,
-                "shipping_information": json.loads(order.shipping_information),
-                "credit_card": result['credit_card'],
-                "transaction": result['transaction'],
-                "product": {
-                    "id": order.product_id,
-                    "quantity": order.quantity
-                },
-                "shipping_price": order.shipping_price,
-                "total_price": order.total_price,
-                "total_price_tax": order.total_price_tax,
-                "paid": order.paid
-            }
-        }
-
-        return jsonify(response_data), 200
-
-    except Exception as e:
-        print("Erreur inattendue :", str(e))
-        return jsonify({
-            "errors": {
-                "order": {
-                    "code": "payment-failed",
-                    "name": "Erreur inattendue lors du paiement"
-                }
-            }
-        }), 422
+@bp.route('/test', methods=['GET'])
+def test_page():
+    return render_template('index.html')
