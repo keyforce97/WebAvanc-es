@@ -1,3 +1,4 @@
+import logging
 import requests
 from .models import Product, db, Order, OrderProduct
 from .redis_client import redis_client
@@ -24,23 +25,15 @@ def fetch_and_store_products():
         print("Erreur lors de la récupération des produits.")
 
 def process_payment(order_id, credit_card):
-    """
-    Fonction appelée par RQ pour traiter le paiement d'une commande.
-    - Met à jour la commande comme payée
-    - Met la commande en cache dans Redis
-    - Gère le statut "en cours de paiement" via Redis
-    - Gère les erreurs de paiement (simulation ou appel réel)
-    """
-    # Marquer la commande comme "en cours de paiement" dans Redis
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger("payment")
     redis_client.set(f'order:{order_id}:paying', '1')
     order = Order.get_or_none(Order.id == order_id)
     if not order:
+        logger.error(f"Commande {order_id} introuvable.")
         redis_client.delete(f'order:{order_id}:paying')
         return
-    # Simuler un appel à un service de paiement externe (ici, succès)
     try:
-        # Ici, tu pourrais faire un vrai appel HTTP si besoin
-        # Simuler une réussite
         transaction = {
             'id': 'transaction_id',
             'success': True,
@@ -58,8 +51,9 @@ def process_payment(order_id, credit_card):
         order.credit_card = json.dumps(credit_card_info)
         order.transaction = json.dumps(transaction)
         order.save()
+        logger.info(f"Paiement réussi pour la commande {order_id}.")
     except Exception as e:
-        # En cas d'erreur, stocker l'erreur dans transaction
+        logger.error(f"Erreur de paiement pour la commande {order_id}: {e}")
         transaction = {
             'id': 'transaction_id',
             'success': False,
@@ -69,7 +63,6 @@ def process_payment(order_id, credit_card):
         order.paid = False
         order.transaction = json.dumps(transaction)
         order.save()
-    # Mettre la commande en cache Redis
     order_data = {
         'id': order.id,
         'total_price': order.total_price,
@@ -85,5 +78,5 @@ def process_payment(order_id, credit_card):
         ]
     }
     redis_client.set(f'order:{order.id}', json.dumps(order_data))
-    # Supprimer le flag "en cours de paiement"
+    logger.info(f"Commande {order_id} mise à jour et stockée dans Redis.")
     redis_client.delete(f'order:{order_id}:paying')

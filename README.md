@@ -42,4 +42,4 @@
 - Dépendances : Flask, peewee, psycopg2-binary, redis, rq, etc.
 
 ## GitHub
-- Déposez votre code sur GitHub et partagez le lien.
+- Déposez votre code sur GitHub et partagez le lien.a

@@ -1,5 +1,6 @@
 # 1) Image de base
 FROM python:3.11-slim
+ENV FLASK_ENV=production
 
 # 2) Création du dossier de travail dans le conteneur
 WORKDIR /usr/src/app
