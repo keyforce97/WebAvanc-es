@@ -1,0 +1,29 @@
+# Environnement virtuel
+.venv/
+env/
+venv/
+
+# Fichiers temporaires
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Fichiers de base de données
+*.db
+*.sqlite3
+
+# Logs
+*.log
+
+# Configs sensibles
+.env
+.env.*
+
+# Fichiers divers
+.DS_Store
+*.egg-info/
+*.egg
+*.bak
+*.swp
+
