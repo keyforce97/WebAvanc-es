@@ -1,27 +1,12 @@
-from peewee import *
-import os
-from playhouse.postgres_ext import PostgresqlExtDatabase
-
-# variables pour connexion PostgreSQL
-DB_HOST = os.environ.get('DB_HOST', 'localhost')
-DB_USER = os.environ.get('DB_USER', 'user')
-DB_PASSWORD = os.environ.get('DB_PASSWORD', 'pass') 
-DB_PORT = os.environ.get('DB_PORT', '5432')
-DB_NAME = os.environ.get('DB_NAME', 'database')
-
-# Connexion à la base PostgreSQL
-# Utilise PostgresqlExtDatabase pour la compatibilité JSON, etc.
-db = PostgresqlExtDatabase(
-    DB_NAME,
-    user=DB_USER,
-    password=DB_PASSWORD,
-    host=DB_HOST,
-    port=DB_PORT
+from peewee import (
+    Model, AutoField, IntegerField, CharField, TextField,
+    FloatField, BooleanField, ForeignKeyField
 )
+from .config import DB
 
 class BaseModel(Model):
     class Meta:
-        database = db
+        database = DB
 
 class Product(BaseModel):
     id          = IntegerField(primary_key=True)
