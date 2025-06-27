@@ -1,4 +1,5 @@
 import requests
+import time
 from .models import Product, db, Order, OrderProduct
 from .redis_client import redis_client
 import json
@@ -39,23 +40,43 @@ def process_payment(order_id, credit_card):
         print(f"[WORKER] Order {order_id} introuvable !")
         redis_client.delete(f'order:{order_id}:paying')
         return
+    
+    # Validation des données de carte
+    card_number = str(credit_card.get('number', ''))
+    card_name = credit_card.get('name', '').strip()
+    expiry_year = credit_card.get('expiration_year')
+    expiry_month = credit_card.get('expiration_month')
+    
+    if not card_number or len(card_number) < 13 or len(card_number) > 19:
+        print(f"[WORKER] Numéro de carte invalide pour order_id={order_id}")
+        redis_client.delete(f'order:{order_id}:paying')
+        return
+        
+    if not card_name or len(card_name) < 2:
+        print(f"[WORKER] Nom de carte invalide pour order_id={order_id}")
+        redis_client.delete(f'order:{order_id}:paying')
+        return
+    
     try:
         print(f"[WORKER] Paiement simulé pour order_id={order_id}")
-        # Ici, tu pourrais faire un vrai appel HTTP si besoin
+        # Ici, tu pourrais faire un vrai appel HTTP vers un processeur de paiement
         # Simuler une réussite
         transaction = {
-            'id': 'transaction_id',
+            'id': f'txn_{order_id}_{int(time.time())}',
             'success': True,
             'error': {},
-            'amount_charged': order.total_price + order.shipping_price
+            'amount_charged': order.total_price_tax + (order.shipping_price / 100)
         }
+        
+        # Stockage sécurisé - JAMAIS le numéro complet
         credit_card_info = {
-            'name': credit_card.get('name'),
-            'first_digits': str(credit_card.get('number', ''))[:4],
-            'last_digits': str(credit_card.get('number', ''))[-4:],
-            'expiration_year': credit_card.get('expiration_year'),
-            'expiration_month': credit_card.get('expiration_month')
+            'name': card_name,
+            'first_digits': card_number[:4],
+            'last_digits': card_number[-4:],
+            'expiration_year': expiry_year,
+            'expiration_month': expiry_month
         }
+        
         order.paid = True
         order.credit_card = json.dumps(credit_card_info)
         order.transaction = json.dumps(transaction)
@@ -65,10 +86,10 @@ def process_payment(order_id, credit_card):
         print(f"[WORKER] Erreur paiement pour order_id={order_id} : {e}")
         # En cas d'erreur, stocker l'erreur dans transaction
         transaction = {
-            'id': 'transaction_id',
+            'id': f'txn_error_{order_id}_{int(time.time())}',
             'success': False,
             'error': {'code': 'payment-error', 'name': str(e)},
-            'amount_charged': order.total_price + order.shipping_price
+            'amount_charged': order.total_price_tax + (order.shipping_price / 100)
         }
         order.paid = False
         order.transaction = json.dumps(transaction)

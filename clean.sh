@@ -1,45 +1,47 @@
 #!/bin/bash
 
-# Script de nettoyage du projet
+# Script de nettoyage complet du cache de l'application
 # Usage: ./clean.sh
 
-echo "🧹 Nettoyage du projet..."
-echo "=========================="
+echo "🧹 Nettoyage complet du cache de l'application"
+echo "============================================="
 
+# Arrêter tous les conteneurs
+echo "🛑 Arrêt de tous les conteneurs..."
+docker-compose down -v
 
-echo "  Suppression du cache Python..."
-find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-find . -name "*.pyc" -delete 2>/dev/null || true
-find . -name "*.pyo" -delete 2>/dev/null || true
-find . -name "*.pyd" -delete 2>/dev/null || true
+# Nettoyage Docker complet
+echo "🗑️ Nettoyage Docker complet..."
+echo "   - Suppression des conteneurs arrêtés..."
+docker container prune -f
 
-# Supprimer les fichiers système macOS
-echo "  Suppression des fichiers système macOS..."
-find . -name ".DS_Store" -delete 2>/dev/null || true
-find . -name ".DS_Store?" -delete 2>/dev/null || true
-find . -name "._*" -delete 2>/dev/null || true
+echo "   - Suppression des images orphelines..."
+docker image prune -f
 
-# Supprimer les fichiers temporaires
-echo "  Suppression des fichiers temporaires..."
-find . -name "*.tmp" -delete 2>/dev/null || true
-find . -name "*.bak" -delete 2>/dev/null || true
-find . -name "*.swp" -delete 2>/dev/null || true
-find . -name "*~" -delete 2>/dev/null || true
+echo "   - Suppression des réseaux inutilisés..."
+docker network prune -f
 
-# Supprimer les fichiers de test temporaires
-echo "  Suppression des fichiers de test..."
-rm -f /tmp/test_*.json /tmp/test_*.html 2>/dev/null || true
+echo "   - Suppression des volumes orphelins..."
+docker volume prune -f
 
-# Nettoyer les logs Docker (optionnel)
-if command -v docker &> /dev/null; then
-    echo " Nettoyage Docker (containers arrêtés et images non utilisées)..."
-    docker container prune -f 2>/dev/null || true
-    docker image prune -f 2>/dev/null || true
-fi
+echo "   - Nettoyage du cache de build..."
+docker builder prune -f
+
+# Nettoyage des logs
+echo "📝 Nettoyage des logs Docker..."
+docker system events --since 1s --until 1s > /dev/null 2>&1
+
+# Nettoyage optionnel total (décommenté si nécessaire)
+# echo "⚠️ Nettoyage total du système Docker (ATTENTION: supprime TOUTES les images)..."
+# docker system prune -a -f
 
 echo ""
 echo "✅ Nettoyage terminé !"
 echo ""
-echo "📁 Structure du projet après nettoyage :"
-find . -maxdepth 2 -type f | grep -v ".venv" | grep -v ".git" | sort
+echo "📊 Espace récupéré :"
+docker system df
+
+echo ""
+echo "💡 Pour redémarrer l'application après nettoyage :"
+echo "   ./start.sh"
 echo ""

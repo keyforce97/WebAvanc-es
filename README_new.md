@@ -6,7 +6,7 @@ Application web complète pour la gestion de commandes avec API Flask et interfa
 
 ### Prérequis
 - Docker et Docker Compose installés
-- Ports 5002, 5432 et 6379 disponibles
+- Ports 5002 et 6379 disponibles
 
 ### Lancement
 ```bash
@@ -33,7 +33,7 @@ Application web complète pour la gestion de commandes avec API Flask et interfa
 ## 🌐 Interface
 
 Une fois démarré, accédez à l'application :
-- **Interface web** : http://localhost:5002/
+- **Interface web** : http://localhost:5002/test
 - **API produits** : http://localhost:5002/api/products
 - **API racine** : http://localhost:5002/
 
@@ -65,10 +65,10 @@ Une fois démarré, accédez à l'application :
 
 ## 🔧 Architecture
 
-- **Backend** : Flask + PostgreSQL + Redis
+- **Backend** : Flask + Redis + PostgreSQL
 - **Frontend** : HTML/JS/CSS
 - **Worker** : RQ (Redis Queue) pour paiements asynchrones
-- **Base de données** : PostgreSQL (données principales) + Redis (cache et queues)
+- **Base de données** : PostgreSQL + Redis (cache)
 - **Déploiement** : Docker Compose
 
 ## 📁 Structure du projet
@@ -108,14 +108,13 @@ docker-compose ps
 
 # Accès direct aux conteneurs
 docker-compose exec api bash
-docker-compose exec db psql -U user -d api8inf349
 docker-compose exec redis redis-cli
 ```
 
 ## 🧪 Test de l'API
 
 ### Via l'interface web
-Accédez à http://localhost:5002/ pour une interface complète.
+Accédez à http://localhost:5002/test pour une interface complète.
 
 ### Via curl
 ```bash

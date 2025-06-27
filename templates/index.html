@@ -6,7 +6,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <style>
     body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; margin: 2rem; background: #f5f7fa; }
-    .card { background: white; padding: 2rem; margin: 2rem 0; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .card { background: white; padding: 2rem; margin: 2rem 0; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
     h1 { color: #2c3e50; margin-bottom: 1.5rem; font-size: 1.5rem; }
     .btn { padding: 0.75rem 1.5rem; margin: 0.5rem 0.25rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
     .btn-blue { background: #3498db; color: white; }
@@ -26,7 +26,7 @@
   </style>
 </head>
 <body>
-  <h1>🧪 Interface de Test – API de Gestion de Commandes</h1>
+  <h1>Interface de Test – API de Gestion de Commandes</h1>
 
   <!-- Liste des produits -->
   <div class="card">
@@ -119,6 +119,20 @@
         <input type="number" name="order_id" min="1" placeholder="Ex : 1" required>
       </label>
       
+      <label>Nom sur la carte :
+        <div class="card-input-group">
+          <input type="text" 
+                 name="cardholder_name" 
+                 placeholder="Ex: Jean Dupont"
+                 minlength="2"
+                 maxlength="50"
+                 pattern="[A-Za-zÀ-ÿ\s-]+"
+                 autocomplete="cc-name"
+                 required>
+          <span class="field-error">Le nom doit contenir uniquement des lettres</span>
+        </div>
+      </label>
+      
       <label>Numéro de carte :
         <div class="card-input-group">
           <input type="text" 
@@ -170,7 +184,7 @@
   <script>
     // Configuration
     const API_BASE = window.location.origin;
-    console.log('🔧 Script chargé, API_BASE:', API_BASE);
+    console.log('Script chargé, API_BASE:', API_BASE);
 
     // Fonctions utilitaires
     const calculateShippingPrice = (weightInGrams) => {
@@ -208,19 +222,16 @@
           
           // Déterminer le statut avec icônes plus claires
           let status = '❌ Non payée';
-          let statusColor = '🔴';
           if (order.order_status === 'paid') {
-            status = '✅ PAYÉE';
-            statusColor = '🟢';
+            status = '✅ Payée';
           } else if (order.order_status === 'payment_processing') {
             status = '⏳ Paiement en cours...';
-            statusColor = '🟡';
           }
           
           // Affichage détaillé avec statut de paiement en évidence
-          let message = `📊 COMMANDE ${orderId}\n`;
-          message += `${statusColor} STATUT: ${status}\n`;
-          message += `\n💰 DÉTAILS FINANCIERS:\n`;
+          let message = `Commande ${orderId}\n`;
+          message += `Statut: ${status}\n`;
+          message += `\nDétails financiers:\n`;
           message += `   • Sous-total: ${order.total_price}$\n`;
           message += `   • Livraison: ${order.shipping_price / 100}$\n`;
           
@@ -233,14 +244,9 @@
           
           if (order.total_price_tax && order.total_price_tax > 0) {
             message += `   • Total avec taxes: ${order.total_price_tax}$\n`;
-            message += `\n🎯 TOTAL FINAL: ${(order.total_price_tax + order.shipping_price / 100).toFixed(2)}$ CAD`;
+            message += `\nTotal final: ${(order.total_price_tax + order.shipping_price / 100).toFixed(2)}$ CAD`;
           } else {
-            message += `\n🧾 Taxes: Non calculées (ajoutez une adresse)`;
-          }
-          
-          // Ajouter info transaction si payée
-          if (order.paid && order.transaction && order.transaction.id) {
-            message += `\n\n💳 Transaction: ${order.transaction.id}`;
+            message += `\nTaxes: Non calculées (ajoutez une adresse)`;
           }
           
           alert(message);
@@ -256,7 +262,7 @@
 
     // Attendre que le DOM soit chargé
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('📄 DOM chargé, attachement des événements...');
+      console.log('DOM chargé, attachement des événements...');
       
       // ===== NOUVEAU: Formatage automatique des champs de carte bancaire =====
       
@@ -334,7 +340,7 @@
       setTimeout(() => {
         const orderForm = document.getElementById('orderForm');
         const submitBtn = orderForm?.querySelector('button[type="submit"]');
-        console.log('🔍 Test éléments:');
+        console.log('Test éléments:');
         console.log('  - orderForm:', !!orderForm);
         console.log('  - submitBtn:', !!submitBtn);
         console.log('  - API_BASE:', API_BASE);
@@ -344,7 +350,7 @@
       const listProductsBtn = document.getElementById('listProductsBtn');
       if (listProductsBtn) {
         listProductsBtn.onclick = async () => {
-          console.log('🔍 Clic sur Afficher produits');
+          console.log('Clic sur Afficher produits');
           try {
             const res = await fetch(`${API_BASE}/api/products`);
             const data = await res.json();
@@ -363,7 +369,7 @@
       const addProductBtn = document.getElementById('addProduct');
       if (addProductBtn) {
         addProductBtn.onclick = () => {
-          console.log('➕ Ajout d\'un produit');
+          console.log('Ajout d\'un produit');
           const productsList = document.getElementById('productsList');
           const newItem = document.createElement('div');
           newItem.className = 'product-item';
@@ -379,10 +385,10 @@
       // 3. Créer une commande
       const orderForm = document.getElementById('orderForm');
       if (orderForm) {
-        console.log('✅ Formulaire orderForm trouvé');
+        console.log('Formulaire orderForm trouvé');
         orderForm.onsubmit = async (e) => {
           e.preventDefault();
-          console.log('🚀 DÉBUT - Formulaire soumis');
+          console.log('DÉBUT - Formulaire soumis');
           
           // Version ultra-simplifiée pour tester
           try {
@@ -391,7 +397,7 @@
             const productIds = formData.getAll('product_id');
             const quantities = formData.getAll('quantity');
             
-            console.log('📝 Données brutes:', { productIds, quantities });
+            console.log('Données brutes:', { productIds, quantities });
 
             // Créer le payload
             const products = productIds.map((id, index) => ({
@@ -399,7 +405,7 @@
               quantity: parseInt(quantities[index])
             })).filter(p => p.id && p.quantity > 0);
             
-            console.log('🔍 Produits traités:', products);
+            console.log('Produits traités:', products);
 
             if (products.length === 0) {
               alert('❌ Veuillez ajouter au moins un produit.');
@@ -425,7 +431,7 @@
               const orderIdMatch = locationUrl.match(/\/order\/(\d+)/);
               const orderId = orderIdMatch ? orderIdMatch[1] : 'Inconnue';
               
-              alert(`✅ COMMANDE CRÉÉE AVEC SUCCÈS !\nID: ${orderId}`);
+              alert(`Commande créée avec succès !\nID: ${orderId}`);
               
               // Optionnel: afficher la commande créée
               if (orderId !== 'Inconnue') {
@@ -433,8 +439,8 @@
               }
             } else if (res.ok) {
               const data = await res.json();
-              console.log('✅ Réponse OK:', data);
-              alert('✅ Commande créée avec succès !');
+              console.log('Réponse OK:', data);
+              alert('Commande créée avec succès !');
             } else {
               const text = await res.text();
               console.error('❌ Erreur:', res.status, text);
@@ -496,7 +502,7 @@
             if (res.ok) {
               const province = formData.get('province');
               const taxRate = { 'QC': '15%', 'ON': '13%', 'AB': '5%', 'BC': '12%', 'NS': '14%' }[province] || '0%';
-              alert(`✅ Adresse ajoutée !\n🏠 Province: ${province} (Taxe ${taxRate})\n💡 Les taxes ont été recalculées automatiquement.`);
+              alert(`✅ Adresse ajoutée !\nProvince: ${province} (Taxe ${taxRate})\nLes taxes ont été recalculées automatiquement.`);
               setTimeout(() => getOrder(orderId), 500);
             } else {
               if (res.status === 409) {
@@ -520,13 +526,35 @@
           const formData = new FormData(e.target);
           const orderId = parseInt(formData.get('order_id'));
           
+          // Parsing de la date d'expiration MM/AA
+          const expiryDate = formData.get('credit_card_expiry_date');
+          const expiryParts = expiryDate.split('/');
+          const expiryMonth = parseInt(expiryParts[0]);
+          const expiryYear = parseInt('20' + expiryParts[1]);
+          
           const payload = {
             credit_card: {
-              credit_card_number: formData.get('credit_card_number'),
-              credit_card_expiry_date: formData.get('credit_card_expiry_date'),
-              credit_card_cvv: formData.get('credit_card_cvv')
+              name: formData.get('cardholder_name'),
+              number: formData.get('credit_card_number').replace(/\s/g, ''),
+              expiration_month: expiryMonth,
+              expiration_year: expiryYear,
+              cvv: formData.get('credit_card_cvv')
             }
           };
+
+          // Validation des données
+          if (!payload.credit_card.name || payload.credit_card.name.trim().length < 2) {
+            alert('❌ Le nom sur la carte est requis');
+            return;
+          }
+          if (!payload.credit_card.number || payload.credit_card.number.length < 13) {
+            alert('❌ Numéro de carte invalide');
+            return;
+          }
+          if (isNaN(expiryMonth) || isNaN(expiryYear) || expiryMonth < 1 || expiryMonth > 12) {
+            alert('❌ Date d\'expiration invalide (format MM/AA)');
+            return;
+          }
 
           try {
             const res = await fetch(`${API_BASE}/order/${orderId}`, {
@@ -547,7 +575,7 @@
               alert('✅ Paiement effectué avec succès !');
               setTimeout(() => getOrder(orderId), 500);
             } else if (res.status === 202) {
-              alert('⏳ Paiement en cours de traitement...\n💡 Statut: 202 Accepted (traitement asynchrone)\n🔄 Vérification automatique du statut...');
+              alert('⏳ Paiement en cours de traitement...\nStatut: 202 Accepted (traitement asynchrone)\nVérification automatique du statut...');
               
               // Vérifier le statut toutes les 2 secondes pendant 30 secondes max
               const checkPaymentStatus = async (attempts = 0) => {
@@ -564,7 +592,7 @@
                   } else {
                     // Traitement terminé, afficher le résultat
                     setTimeout(() => {
-                      alert('🔔 Paiement terminé ! Voici le statut final :');
+                      alert('Paiement terminé ! Voici le statut final :');
                       getOrder(orderId);
                     }, 500);
                   }
@@ -590,7 +618,7 @@
         };
       }
 
-      console.log('✅ Tous les événements attachés');
+      console.log('Tous les événements attachés');
     });
   </script>
 </body>

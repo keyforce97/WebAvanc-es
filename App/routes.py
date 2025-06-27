@@ -172,7 +172,7 @@ def update_order(order_id):
         order.shipping_information = json.dumps(shipping_info)
     # Recalculer prix total et shipping
     products = OrderProduct.select().where(OrderProduct.order == order)
-    total_price = sum(op.product.price * op.quantity for op in products)
+    new_total_price = sum(op.product.price * op.quantity for op in products)
     total_weight = sum(op.product.weight * op.quantity for op in products)
     if total_weight <= 500:
         shipping_price = 500
@@ -180,13 +180,34 @@ def update_order(order_id):
         shipping_price = 1000
     else:
         shipping_price = 2500
-    order.total_price = total_price
+    
+    # Vérifier si le total_price a changé
+    total_price_changed = (order.total_price != new_total_price)
+    order.total_price = new_total_price
     order.shipping_price = shipping_price
-    # Calcul taxe selon la province
-    province = shipping_info['province'] if shipping_info and 'province' in shipping_info else ''
-    tax_rates = {"QC": 0.15, "ON": 0.13, "AB": 0.05, "BC": 0.12, "NS": 0.14}
-    tax_rate = tax_rates.get(province, 0)
-    order.total_price_tax = round(total_price * (1 + tax_rate), 2)
+    
+    # Recalculer les taxes si :
+    # 1. Des nouvelles informations d'adresse sont fournies, OU
+    # 2. Le total_price a changé ET on a déjà une adresse avec province
+    if shipping_info and 'province' in shipping_info:
+        # Cas 1: Nouvelle adresse fournie
+        province = shipping_info['province']
+        tax_rates = {"QC": 0.15, "ON": 0.13, "AB": 0.05, "BC": 0.12, "NS": 0.14}
+        tax_rate = tax_rates.get(province, 0)
+        order.total_price_tax = round(new_total_price * (1 + tax_rate), 2)
+    elif total_price_changed and order.shipping_information:
+        # Cas 2: Total changé et on a une adresse existante
+        existing_shipping = json.loads(order.shipping_information)
+        if 'province' in existing_shipping:
+            province = existing_shipping['province']
+            tax_rates = {"QC": 0.15, "ON": 0.13, "AB": 0.05, "BC": 0.12, "NS": 0.14}
+            tax_rate = tax_rates.get(province, 0)
+            order.total_price_tax = round(new_total_price * (1 + tax_rate), 2)
+    elif order.total_price_tax == 0 or order.total_price_tax is None:
+        # Si aucune taxe n'est définie, taxe = sous-total
+        order.total_price_tax = new_total_price
+    # Sinon, garder les taxes existantes
+    
     order.save()
     # Si credit_card présent, lancer le paiement en tâche de fond
     credit_card = data.get('credit_card')

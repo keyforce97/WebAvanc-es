@@ -1,11 +1,17 @@
-Flask>=1.1.0
-peewee
-requests
-pytest
-pytest-flask
-psycopg2-binary
-redis
-rq
-gunicorn
+# Dépendances principales de l'application
+Flask>=2.0.0
+peewee>=3.14.0
+psycopg2-binary>=2.8.6
+redis>=4.0.0
+rq>=1.10.0
+requests>=2.25.0
+click>=8.0.0
+
+# Serveur WSGI pour production
+gunicorn>=20.1.0
+
+# Optionnel - Tests (décommentez si nécessaire)
+# pytest>=6.2.0
+# pytest-flask>=1.2.0
 
 

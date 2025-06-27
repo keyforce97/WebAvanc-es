@@ -45,5 +45,7 @@ echo ""
 echo "🔧 Commandes utiles :"
 echo "   - Voir les logs API    : docker-compose logs -f api"
 echo "   - Voir les logs Worker : docker-compose logs -f worker"
-echo "   - Arrêter             : docker-compose down"
+echo "   - Arrêter             : ./stop.sh"
+echo "   - Nettoyer le cache   : ./clean.sh"
 echo ""
+
