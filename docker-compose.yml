@@ -19,7 +19,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=api8inf349
       - REDIS_URL=redis://redis:6379
-      - FLASK_APP=app.py
+      - FLASK_APP=api8inf349.py
       - FLASK_ENV=development
       - SECRET_KEY=dev-secret-key-change-in-production
     depends_on:
@@ -46,7 +46,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=api8inf349
       - REDIS_URL=redis://redis:6379
-      - FLASK_APP=app.py
+      - FLASK_APP=api8inf349.py
       - FLASK_ENV=development
     depends_on:
       - redis

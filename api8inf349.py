@@ -14,7 +14,7 @@ def create_app():
     # Enregistrement du Blueprint
     app.register_blueprint(routes_bp)
     
-    # Commande CLI pour initialiser la base
+    #  initialisation de la base
     @app.cli.command("init-db")
     @with_appcontext
     def init_db():
@@ -24,7 +24,7 @@ def create_app():
         fetch_and_store_products()
         print("Base de données initialisée et produits importés !")
     
-    # Commande CLI pour lancer le worker RQ
+    # le worker RQ
     @app.cli.command("worker")
     @with_appcontext
     def worker():
@@ -43,13 +43,8 @@ def create_app():
     
     return app
 
-# Création de l'instance pour Gunicorn
+# Gunicorn
 app = create_app()
 
-# Point d'entrée pour les tests locaux
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5001)
-
-# Point d'entrée pour les tests locaux
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)

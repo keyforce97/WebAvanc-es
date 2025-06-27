@@ -3,7 +3,7 @@ import os
 class Config:
     """Configuration de l'application Flask."""
     
-    # Configuration Flask
+    # Config Flask
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
     DEBUG = os.environ.get('FLASK_ENV') == 'development'
     
@@ -14,27 +14,27 @@ class Config:
     DB_PORT = int(os.environ.get('DB_PORT', '5432'))
     DB_NAME = os.environ.get('DB_NAME', 'api8inf349')
     
-    # Configuration Redis
+    # Config Redis
     REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379')
     
-    # Configuration RQ
+    # Config RQ
     RQ_DEFAULT_TIMEOUT = 600  # 10 minutes
     
     @staticmethod
     def init_app(app):
-        """Initialise l'application avec cette configuration."""
+        """Initialise l'application avec cette Config."""
         pass
 
 class DevelopmentConfig(Config):
-    """Configuration pour le développement."""
+    """Config pour le développement."""
     DEBUG = True
 
 class ProductionConfig(Config):
-    """Configuration pour la production."""
+    """Config pour la production."""
     DEBUG = False
 
 class TestingConfig(Config):
-    """Configuration pour les tests."""
+    """Config pour les tests."""
     TESTING = True
     DB_NAME = os.environ.get('TEST_DB_NAME', 'test_api8inf349')
 

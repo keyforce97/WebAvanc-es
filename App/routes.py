@@ -1,9 +1,8 @@
-from flask import Blueprint, jsonify, request, redirect, url_for, render_template, send_from_directory
+from flask import Blueprint, jsonify, request, redirect, url_for, render_template
 from peewee import DoesNotExist 
 from .models import Product, Order, OrderProduct
 import json 
 import requests
-import os
 
 # Définition du Blueprint
 bp = Blueprint('routes', __name__)
@@ -290,11 +289,11 @@ async function createOrder() {
       resultDiv.innerHTML = `<h3>✅ SUCCÈS !</h3><p>Commande créée avec ID: ${orderId}</p>`;
     } else {
       const text = await response.text();
-      resultDiv.innerHTML = `<h3>❌ ERREUR</h3><p>Statut: ${response.status}</p><p>${text}</p>`;
+      resultDiv.innerHTML = `<h3> ERREUR</h3><p>Statut: ${response.status}</p><p>${text}</p>`;
     }
   } catch (error) {
     console.error('Erreur:', error);
-    resultDiv.innerHTML = `<h3>💥 ERREUR</h3><p>${error.message}</p>`;
+    resultDiv.innerHTML = `<h3>ERREUR</h3><p>${error.message}</p>`;
   }
 }
 </script>
@@ -316,7 +315,3 @@ def api_products():
         })
     return jsonify({"products": products}), 200
 
-@bp.route('/simple', methods=['GET'])
-def test_simple():
-    """Page de test ultra-simple pour créer une commande."""
-    return send_from_directory(os.path.join(os.path.dirname(__file__), '..'), 'test_simple.html')
