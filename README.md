@@ -20,7 +20,7 @@ Ce projet implémente une API Flask pour la gestion de commandes, avec traitemen
 ├── Dockerfile          # Construction de l'image API
 ├── requirements.txt    # Dépendances Python
 ├── .env.example        # Exemple de variables d'environnement
-└── README.md           # Ce fichier
+└── README.md          
 ```
 
 ## Lancement des services
@@ -38,7 +38,7 @@ docker-compose up -d --build
 docker-compose exec api flask init-db
 ```
 
-* L'API sera disponible sur `http://localhost:5002` # (port5002)ou 5000 à vous de choisir.
+* L'API sera disponible sur `http://localhost:5002/test` # (port5002)ou 5000 à vous de choisir.
 * PostgreSQL sur le port `5432`
 * Redis sur le port `6379`
 
@@ -80,7 +80,7 @@ cd ~/Documents/WebAvanc-es
 docker-compose exec api rq worker default
 ```
 
-### Terminal 3 : Tester les endpoints avec `curl`
+### Terminal 3 : Test avec `curl`
 
 1. **Créer une commande** :
 
@@ -144,3 +144,12 @@ curl -s http://localhost:5002/ | python -m json.tool
 Repérez les `id` dont `"in_stock":true` pour les utiliser dans vos tests.
 
 
+
+
+
+docker-compose down -v
+docker-compose up -d --build
+docker-compose exec api flask init-db
+
+# Exécuter le worker RQ
+docker-compose exec api rq worker default

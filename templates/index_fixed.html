@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Commandes – Test API</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <style>
     body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; margin: 2rem; background: #f5f7fa; }
     .card { background: white; padding: 2rem; margin: 2rem 0; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -98,71 +97,26 @@
       <label>Pays :
         <input type="text" name="country" value="Canada" required>
       </label>
-      
-      <!-- Affichage automatique des taxes -->
-      <div class="tax-display" id="taxDisplay" style="display: none;">
-        <strong>Taux de taxe calculé :</strong>
-        <span class="tax-percentage" id="taxPercent">0%</span>
-        <br>
-        <small>Les taxes seront appliquées automatiquement lors de l'ajout de l'adresse</small>
-      </div>
-      
-      <button type="submit" class="btn btn-submit" id="addShippingBtn">Ajouter adresse</button>
+      <button type="submit" class="btn btn-submit">Ajouter adresse</button>
     </form>
   </div>
 
   <!-- Payer une commande -->
   <div class="card">
     <h1>Payer une commande</h1>
-    <form id="paymentForm" class="payment-form">
+    <form id="paymentForm">
       <label>ID commande :
         <input type="number" name="order_id" min="1" placeholder="Ex : 1" required>
       </label>
-      
       <label>Numéro de carte :
-        <div class="card-input-group">
-          <input type="text" 
-                 name="credit_card_number" 
-                 placeholder="1234 5678 9012 3456"
-                 maxlength="19"
-                 pattern="[0-9\s]{13,19}"
-                 inputmode="numeric"
-                 autocomplete="cc-number"
-                 required>
-          <span class="field-error">Le numéro de carte doit contenir 13-16 chiffres</span>
-        </div>
+        <input type="text" name="credit_card_number" placeholder="4242 4242 4242 4242" required>
       </label>
-      
-      <div class="card-row">
-        <label>Date d'expiration :
-          <div class="card-input-group">
-            <input type="text" 
-                   name="credit_card_expiry_date" 
-                   placeholder="MM/AA"
-                   maxlength="5"
-                   pattern="(0[1-9]|1[0-2])\/([0-9]{2})"
-                   inputmode="numeric"
-                   autocomplete="cc-exp"
-                   required>
-            <span class="field-error">Format: MM/AA</span>
-          </div>
-        </label>
-        
-        <label>CVV :
-          <div class="card-input-group">
-            <input type="text" 
-                   name="credit_card_cvv" 
-                   placeholder="123"
-                   maxlength="3"
-                   pattern="[0-9]{3}"
-                   inputmode="numeric"
-                   autocomplete="cc-csc"
-                   required>
-            <span class="field-error">3 chiffres requis</span>
-          </div>
-        </label>
-      </div>
-      
+      <label>Date d'expiration :
+        <input type="text" name="credit_card_expiry_date" placeholder="12/25" required>
+      </label>
+      <label>CVC :
+        <input type="text" name="credit_card_cvv" placeholder="123" required>
+      </label>
       <button type="submit" class="btn btn-submit">Payer</button>
     </form>
   </div>
@@ -205,45 +159,11 @@
         
         if (res.ok) {
           const order = data.order || data;
+          let status = '📦 En attente';
+          if (order.order_status === 'paid') status = '✅ Payée';
+          else if (order.order_status === 'payment_processing') status = '⏳ Paiement en cours';
           
-          // Déterminer le statut avec icônes plus claires
-          let status = '❌ Non payée';
-          let statusColor = '🔴';
-          if (order.order_status === 'paid') {
-            status = '✅ PAYÉE';
-            statusColor = '🟢';
-          } else if (order.order_status === 'payment_processing') {
-            status = '⏳ Paiement en cours...';
-            statusColor = '🟡';
-          }
-          
-          // Affichage détaillé avec statut de paiement en évidence
-          let message = `📊 COMMANDE ${orderId}\n`;
-          message += `${statusColor} STATUT: ${status}\n`;
-          message += `\n💰 DÉTAILS FINANCIERS:\n`;
-          message += `   • Sous-total: ${order.total_price}$\n`;
-          message += `   • Livraison: ${order.shipping_price / 100}$\n`;
-          
-          if (order.shipping_information && order.shipping_information.province) {
-            const province = order.shipping_information.province;
-            const taxRates = { 'QC': '15%', 'ON': '13%', 'AB': '5%', 'BC': '12%', 'NS': '14%' };
-            const taxRate = taxRates[province] || '0%';
-            message += `   • Province: ${province} (Taxe ${taxRate})\n`;
-          }
-          
-          if (order.total_price_tax && order.total_price_tax > 0) {
-            message += `   • Total avec taxes: ${order.total_price_tax}$\n`;
-            message += `\n🎯 TOTAL FINAL: ${(order.total_price_tax + order.shipping_price / 100).toFixed(2)}$ CAD`;
-          } else {
-            message += `\n🧾 Taxes: Non calculées (ajoutez une adresse)`;
-          }
-          
-          // Ajouter info transaction si payée
-          if (order.paid && order.transaction && order.transaction.id) {
-            message += `\n\n💳 Transaction: ${order.transaction.id}`;
-          }
-          
-          alert(message);
+          alert(`📊 Commande ${orderId} (${status})\n💰 Total: ${order.total_price}$\n🚚 Livraison: ${order.shipping_price / 100}$\n🧾 Avec taxes: ${order.total_price_tax ? order.total_price_tax + '$' : 'Non calculées'}`);
         } else if (res.status === 202) {
           alert('⏳ Commande en cours de traitement (paiement asynchrone)');
         } else {
@@ -257,88 +177,6 @@
     // Attendre que le DOM soit chargé
     document.addEventListener('DOMContentLoaded', function() {
       console.log('📄 DOM chargé, attachement des événements...');
-      
-      // ===== NOUVEAU: Formatage automatique des champs de carte bancaire =====
-      
-      // Formatage du numéro de carte (groupes de 4 chiffres)
-      const cardNumberInput = document.querySelector('input[name="credit_card_number"]');
-      if (cardNumberInput) {
-        cardNumberInput.addEventListener('input', function(e) {
-          let value = e.target.value.replace(/\D/g, ''); // Garder seulement les chiffres
-          value = value.substring(0, 16); // Max 16 chiffres
-          value = value.replace(/(\d{4})(?=\d)/g, '$1 '); // Grouper par 4
-          e.target.value = value;
-        });
-      }
-      
-      // Formatage de la date d'expiration (MM/AA)
-      const expiryInput = document.querySelector('input[name="credit_card_expiry_date"]');
-      if (expiryInput) {
-        expiryInput.addEventListener('input', function(e) {
-          let value = e.target.value.replace(/\D/g, ''); // Garder seulement les chiffres
-          if (value.length >= 2) {
-            value = value.substring(0, 2) + '/' + value.substring(2, 4);
-          }
-          e.target.value = value;
-        });
-      }
-      
-      // Formatage du CVV (3 chiffres max)
-      const cvvInput = document.querySelector('input[name="credit_card_cvv"]');
-      if (cvvInput) {
-        cvvInput.addEventListener('input', function(e) {
-          let value = e.target.value.replace(/\D/g, ''); // Garder seulement les chiffres
-          value = value.substring(0, 3); // Max 3 chiffres
-          e.target.value = value;
-        });
-      }
-      
-      // ===== NOUVEAU: Calcul automatique des taxes =====
-      
-      // Fonction pour calculer et afficher les taxes
-      function calculateAndDisplayTax() {
-        const provinceSelect = document.querySelector('select[name="province"]');
-        const taxDisplay = document.getElementById('taxDisplay');
-        const taxPercent = document.getElementById('taxPercent');
-        
-        if (provinceSelect && taxDisplay && taxPercent) {
-          const selectedOption = provinceSelect.options[provinceSelect.selectedIndex];
-          if (selectedOption && selectedOption.value) {
-            // Extraire le pourcentage de taxe du texte de l'option
-            const match = selectedOption.textContent.match(/\((\d+)%\)/);
-            const taxRate = match ? match[1] + '%' : '0%';
-            
-            taxPercent.textContent = taxRate;
-            taxDisplay.style.display = 'block';
-            taxDisplay.classList.add('updated');
-            
-            // Retirer l'animation après 500ms
-            setTimeout(() => {
-              taxDisplay.classList.remove('updated');
-            }, 500);
-          } else {
-            taxDisplay.style.display = 'none';
-          }
-        }
-      }
-      
-      // Écouter les changements de province
-      const provinceSelect = document.querySelector('select[name="province"]');
-      if (provinceSelect) {
-        provinceSelect.addEventListener('change', calculateAndDisplayTax);
-      }
-      
-      // =====
-      
-      // Test immédiat des éléments critiques
-      setTimeout(() => {
-        const orderForm = document.getElementById('orderForm');
-        const submitBtn = orderForm?.querySelector('button[type="submit"]');
-        console.log('🔍 Test éléments:');
-        console.log('  - orderForm:', !!orderForm);
-        console.log('  - submitBtn:', !!submitBtn);
-        console.log('  - API_BASE:', API_BASE);
-      }, 100);
 
       // 1. Afficher les produits
       const listProductsBtn = document.getElementById('listProductsBtn');
@@ -379,21 +217,28 @@
       // 3. Créer une commande
       const orderForm = document.getElementById('orderForm');
       if (orderForm) {
-        console.log('✅ Formulaire orderForm trouvé');
         orderForm.onsubmit = async (e) => {
           e.preventDefault();
-          console.log('🚀 DÉBUT - Formulaire soumis');
+          console.log('🚀 Formulaire de commande soumis');
           
-          // Version ultra-simplifiée pour tester
           try {
-            // Récupérer les données du formulaire
+            // Récupérer les produits
+            let allProducts = [];
+            try {
+              const res = await fetch(`${API_BASE}/api/products`);
+              allProducts = await res.json();
+              console.log('📦 Produits récupérés:', allProducts.length);
+            } catch (error) {
+              console.warn('Impossible de récupérer les produits:', error);
+            }
+
+            // Traiter le formulaire
             const formData = new FormData(e.target);
             const productIds = formData.getAll('product_id');
             const quantities = formData.getAll('quantity');
             
-            console.log('📝 Données brutes:', { productIds, quantities });
+            console.log('📝 Données formulaire:', { productIds, quantities });
 
-            // Créer le payload
             const products = productIds.map((id, index) => ({
               id: parseInt(id),
               quantity: parseInt(quantities[index])
@@ -406,47 +251,54 @@
               return;
             }
 
-            const payload = { products };
-            console.log('� Payload à envoyer:', JSON.stringify(payload));
+            // Calculs estimatifs
+            let estimatedPrice = 0;
+            let estimatedWeight = 0;
+            products.forEach(product => {
+              const productInfo = allProducts.products?.find(p => p.id === product.id);
+              if (productInfo) {
+                estimatedPrice += productInfo.price * product.quantity;
+                estimatedWeight += productInfo.weight * product.quantity;
+              }
+            });
 
-            // Appel API simplifié
-            console.log('� Envoi vers:', `${API_BASE}/order`);
+            const estimatedShipping = calculateShippingPrice(estimatedWeight);
+            console.log('💡 Estimation:', { estimatedPrice, estimatedWeight, estimatedShipping });
+
+            // Appel API
+            const payload = { products };
+            console.log('🚀 Appel API avec:', payload);
+
             const res = await fetch(`${API_BASE}/order`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
+              body: JSON.stringify(payload),
+              redirect: 'manual'
             });
 
-            console.log('📡 Réponse reçue:', res.status, res.statusText);
+            console.log('📡 Réponse API:', res.status, res.statusText);
 
-            if (res.redirected || res.status === 302) {
-              console.log('✅ Redirection détectée, commande créée');
-              const locationUrl = res.url;
-              const orderIdMatch = locationUrl.match(/\/order\/(\d+)/);
-              const orderId = orderIdMatch ? orderIdMatch[1] : 'Inconnue';
-              
-              alert(`✅ COMMANDE CRÉÉE AVEC SUCCÈS !\nID: ${orderId}`);
-              
-              // Optionnel: afficher la commande créée
-              if (orderId !== 'Inconnue') {
-                setTimeout(() => getOrder(parseInt(orderId)), 1000);
+            if (res.status === 0 || res.status === 302) {
+              const orderId = extractOrderIdFromRedirect(res);
+              alert(`✅ Commande créée ! ID: ${orderId || 'Inconnue'}\n\n💡 Estimation: ${estimatedPrice / 100}$ + livraison ${estimatedShipping / 100}$ = ${(estimatedPrice + estimatedShipping) / 100}$`);
+              if (orderId) {
+                setTimeout(() => getOrder(orderId), 500);
               }
-            } else if (res.ok) {
-              const data = await res.json();
-              console.log('✅ Réponse OK:', data);
-              alert('✅ Commande créée avec succès !');
             } else {
               const text = await res.text();
-              console.error('❌ Erreur:', res.status, text);
-              alert(`❌ Erreur ${res.status}: ${text}`);
+              let data;
+              try {
+                data = JSON.parse(text);
+              } catch {
+                data = { message: text };
+              }
+              alert(`❌ Erreur ${res.status}: ${data.message || text}`);
             }
           } catch (error) {
-            console.error('❌ Exception:', error);
+            console.error('Erreur création commande:', error);
             alert(`❌ Erreur : ${error.message}`);
           }
         };
-      } else {
-        console.error('❌ Formulaire orderForm NON TROUVÉ !');
       }
 
       // 4. Afficher une commande
@@ -547,35 +399,7 @@
               alert('✅ Paiement effectué avec succès !');
               setTimeout(() => getOrder(orderId), 500);
             } else if (res.status === 202) {
-              alert('⏳ Paiement en cours de traitement...\n💡 Statut: 202 Accepted (traitement asynchrone)\n🔄 Vérification automatique du statut...');
-              
-              // Vérifier le statut toutes les 2 secondes pendant 30 secondes max
-              const checkPaymentStatus = async (attempts = 0) => {
-                if (attempts >= 15) { // 15 x 2 sec = 30 sec max
-                  alert('⏰ Délai d\'attente dépassé. Veuillez vérifier manuellement le statut de la commande.');
-                  return;
-                }
-                
-                try {
-                  const statusRes = await fetch(`${API_BASE}/order/${orderId}`);
-                  if (statusRes.status === 202) {
-                    // Encore en traitement, réessayer dans 2 secondes
-                    setTimeout(() => checkPaymentStatus(attempts + 1), 2000);
-                  } else {
-                    // Traitement terminé, afficher le résultat
-                    setTimeout(() => {
-                      alert('🔔 Paiement terminé ! Voici le statut final :');
-                      getOrder(orderId);
-                    }, 500);
-                  }
-                } catch (error) {
-                  console.error('Erreur lors de la vérification du statut:', error);
-                  setTimeout(() => checkPaymentStatus(attempts + 1), 2000);
-                }
-              };
-              
-              // Commencer la vérification après 2 secondes
-              setTimeout(() => checkPaymentStatus(), 2000);
+              alert('⏳ Paiement en cours de traitement...\n💡 Statut: 202 Accepted (traitement asynchrone)\n🔄 Consultez la commande dans quelques secondes.');
             } else {
               if (res.status === 409) {
                 alert('❌ Impossible de modifier une commande déjà payée.');

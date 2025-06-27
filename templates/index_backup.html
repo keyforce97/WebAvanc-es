@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Commandes – Test API</title>
+  <style>
+    /* Reset & typo */
+    * { box-sizing: border-box; margin: 0; padding: 0 }
+    body { font-family: "Segoe UI", sans-serif; background: #f0f4f8; color: #333; padding: 2rem; }
+    h1 { margin-bottom: 0.5rem; color: #005f99; }
+
+    /* Card container */
+    .card { background: #fff; padding: 1.5rem; border-radius: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 2rem; }
+
+    /* Form layout */
+    form { display: grid; gap: 1rem; }
+    label { display: flex; flex-direction: column; font-weight: 600; }
+    input, select, textarea { padding: 0.5rem; border: 1px solid #ccc; border-radius: .5rem; font-size: 1rem; }
+    .products-list { display: grid; gap: .5rem; margin-top: .5rem; }
+    .product-item { display: flex; gap: .5rem; }
+    .product-item input { flex: 1; }
+
+    /* Buttons */
+    .btn { padding: .75rem 1.5rem; border: none; border-radius: 2rem; font-size: 1rem; font-weight: 600; cursor: pointer; }
+    .btn-add    { background: #007acc; color: #fff; width: fit-content; }
+    .btn-submit { background: #28a745; color: #fff; }
+    .btn-blue   { background: #007bff; color: white; }
+
+    /* Inline small form */
+    .inline { display: flex; gap: .5rem; align-items: center; }
+    .inline input { width: 4rem; }
+
+    /* Output JSON */
+    pre#productsOutput {
+      background: #f8f9fa;
+      padding: 1rem;
+      border-radius: .5rem;
+      max-height: 300px;
+      overflow: auto;
+      margin-top: 1rem;
+      font-family: monospace;
+      font-size: .9rem;
+    }
+
+    /* Rules section */
+    .rules { background: #e8f4fd; border-left: 4px solid #007acc; padding: 1rem; margin: 1rem 0; }
+    .rules h3 { color: #005f99; margin-bottom: 0.5rem; }
+    .rules ul { margin-left: 1rem; }
+    .rules li { margin: 0.25rem 0; }
+    .warning { background: #fff3cd; border-left: 4px solid #ffc107; }
+    .info { background: #d1ecf1; border-left: 4px solid #17a2b8; }
+  </style>
+</head>
+<body>
+
+  <!-- Liste des produits (maintenant en haut) -->
+  <div class="card">
+    <h1>📦 Liste des produits</h1>
+    <div class="inline">
+      <button id="listProductsBtn" class="btn btn-blue">Afficher produits</button>
+    </div>
+    <pre id="productsOutput"></pre>
+  </div>
+
+  <!-- Créer une commande -->
+  <div class="card">
+    <h1>Créer une commande</h1>
+    <form id="orderForm">
+      <div class="products-list" id="productsList">
+        <div class="product-item">
+          <input type="number" name="product_id" placeholder="ID produit" min="1" required>
+          <input type="number" name="quantity"   placeholder="Quantité"  min="1" value="1" required>
+        </div>
+      </div>
+      <button type="button" class="btn btn-add"    id="addProduct">+ Ajouter un produit</button>
+      <button type="submit" class="btn btn-submit">Créer</button>
+    </form>
+  </div>
+
+  <!-- Afficher une commande -->
+  <div class="card">
+    <h1>Afficher une commande</h1>
+    <form id="getOrderForm" class="inline">
+      <label>ID commande :
+        <input type="number" name="order_id" min="1" placeholder="Ex : 1" required>
+      </label>
+      <button type="submit" class="btn btn-blue">Afficher</button>
+    </form>
+  </div>
+
+  <!-- Ajouter une adresse -->
+  <div class="card">
+    <h1>Ajouter une adresse (taxes)</h1>
+    <div class="rules warning">
+      <h4>⚠️ Rappel :</h4>
+      <ul>
+        <li><strong>Taxes par province :</strong> QC=15%, ON=13%, AB=5%, BC=12%, NS=14%, autres=0%</li>
+        <li><strong>Important :</strong> Les taxes s'appliquent seulement sur le prix des produits, pas sur les frais de livraison</li>
+      </ul>
+    </div>
+    <form id="shippingForm">
+      <label>ID commande :
+        <input type="number" name="order_id" min="1" placeholder="Ex : 1" required>
+      </label>
+      <label>Adresse :
+        <input type="text" name="address" placeholder="123 rue de la Paix" required>
+      </label>
+      <label>Ville :
+        <input type="text" name="city" placeholder="Montréal" required>
+      </label>
+      <label>Province :
+        <select name="province" required>
+          <option value="">Sélectionnez…</option>
+          <option value="QC">QC - Québec (15%)</option>
+          <option value="ON">ON - Ontario (13%)</option>
+          <option value="AB">AB - Alberta (5%)</option>
+          <option value="BC">BC - Colombie-Britannique (12%)</option>
+          <option value="NS">NS - Nouvelle-Écosse (14%)</option>
+          <option value="NB">NB - Nouveau-Brunswick (0%)</option>
+          <option value="PE">PE - Île-du-Prince-Édouard (0%)</option>
+          <option value="SK">SK - Saskatchewan (0%)</option>
+          <option value="MB">MB - Manitoba (0%)</option>
+          <option value="NL">NL - Terre-Neuve-et-Labrador (0%)</option>
+          <option value="NT">NT - Territoires du Nord-Ouest (0%)</option>
+          <option value="NU">NU - Nunavut (0%)</option>
+          <option value="YT">YT - Yukon (0%)</option>
+        </select>
+      </label>
+      <label>Code postal :
+        <input type="text" name="postal_code" placeholder="H2X 3Y4" required>
+      </label>
+      <label>Pays :
+        <input type="text" name="country" value="Canada" required>
+      </label>
+      <button type="submit" class="btn btn-submit">Ajouter adresse</button>
+    </form>
+  </div>
+
+  <!-- Payer une commande -->
+  <div class="card">
+    <h1>Payer une commande</h1>
+    <form id="paymentForm">
+      <label>ID commande :
+        <input type="number" name="order_id" min="1" placeholder="Ex : 1" required>
+      </label>
+      <label>Numéro de carte :
+        <input type="text" name="credit_card_number" placeholder="4242 4242 4242 4242" required>
+      </label>
+      <label>Date d'expiration :
+        <input type="text" name="credit_card_expiry_date" placeholder="12/25" required>
+      </label>
+      <label>CVC :
+        <input type="text" name="credit_card_cvv" placeholder="123" required>
+      </label>
+      <button type="submit" class="btn btn-submit">Payer</button>
+    </form>
+  </div>
+
+  <script>
+    // URL de base de l'API
+    const API_BASE = window.location.origin;
+    
+    // Test de diagnostic
+    console.log('🔧 Script chargé, API_BASE:', API_BASE);
+    
+    // Vérifier que tous les éléments existent
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('📄 DOM chargé');
+      const orderForm = document.getElementById('orderForm');
+      const listBtn = document.getElementById('listProductsBtn');
+      const addBtn = document.getElementById('addProduct');
+      
+      console.log('🔍 Éléments trouvés:');
+      console.log('  - orderForm:', !!orderForm);
+      console.log('  - listProductsBtn:', !!listBtn);
+      console.log('  - addProduct:', !!addBtn);
+      
+      if (!orderForm) {
+        console.error('❌ Formulaire orderForm introuvable !');
+        return;
+      }
+    });
+
+    // 2) Fonction utilitaire pour calculer les frais de livraison
+    const calculateShippingPrice = (weightInGrams) => {
+      if (weightInGrams <= 500) return 500;       // 5.00 CAD
+      if (weightInGrams <= 2000) return 1000;     // 10.00 CAD
+      return 2500;                                // 25.00 CAD
+    };
+
+    // 3) Fonction utilitaire pour calculer les taxes
+    const calculateTaxes = (price, province) => {
+      const taxRates = {
+        'QC': 0.15, 'ON': 0.13, 'AB': 0.05, 'BC': 0.12, 'NS': 0.14
+      };
+      const rate = taxRates[province] || 0;
+      return Math.round(price * (1 + rate));
+    };
+
+    // Fonction utilitaire pour extraire l'ID de commande depuis la redirection
+    const extractOrderIdFromRedirect = (response) => {
+      try {
+        const location = response.headers.get('location') || response.url;
+        const match = location.match(/\/order\/(\d+)/);
+        return match ? parseInt(match[1]) : null;
+      } catch {
+        return null;
+      }
+    };
+
+    // Attendre que le DOM soit chargé avant d'attacher les événements
+    document.addEventListener('DOMContentLoaded', function() {
+    
+    // 4) Ajouter un produit dans le formulaire
+    const addProductBtn = document.getElementById('addProduct');
+    if (addProductBtn) {
+      addProductBtn.onclick = () => {
+      const productsList = document.getElementById('productsList');
+      const newItem = document.createElement('div');
+      newItem.className = 'product-item';
+      newItem.innerHTML = `
+        <input type="number" name="product_id" placeholder="ID produit" min="1" required>
+        <input type="number" name="quantity"   placeholder="Quantité"  min="1" value="1" required>
+        <button type="button" class="btn" style="background: #dc3545; color: white; padding: 0.5rem;" onclick="this.parentElement.remove()">×</button>
+      `;
+      productsList.appendChild(newItem);
+      };
+    }
+
+    // 5) Créer une commande
+    const orderForm = document.getElementById('orderForm');
+    if (orderForm) {
+      orderForm.onsubmit = async (e) => {
+      e.preventDefault();
+      console.log('🚀 Formulaire soumis - début du processus');
+      
+      // Récupérer la liste des produits pour enrichir les infos
+      let allProducts = [];
+      try {
+        const res = await fetch(`${API_BASE}/api/products`);
+        allProducts = await res.json();
+        console.log('📦 Produits récupérés:', allProducts.length);
+      } catch (error) {
+        console.warn('Impossible de récupérer la liste des produits:', error);
+        alert('⚠️ Impossible de récupérer la liste des produits: ' + error.message);
+      }
+
+      const formData = new FormData(e.target);
+      const productIds = formData.getAll('product_id');
+      const quantities = formData.getAll('quantity');
+      
+      console.log('📝 Données formulaire:');
+      console.log('  - Product IDs:', productIds);
+      console.log('  - Quantities:', quantities);
+
+      const products = productIds.map((id, index) => ({
+        id: parseInt(id),
+        quantity: parseInt(quantities[index])
+      })).filter(p => p.id && p.quantity > 0);
+      
+      console.log('🔍 Produits traités:', products);
+
+      if (products.length === 0) {
+        alert('❌ Veuillez ajouter au moins un produit.');
+        console.log('❌ Aucun produit valide trouvé');
+        return;
+      }
+
+      // Calcul estimatif côté frontend
+      let estimatedPrice = 0;
+      let estimatedWeight = 0;
+      let productDetails = [];
+
+      products.forEach(product => {
+        const productInfo = allProducts.find(p => p.id === product.id);
+        if (productInfo) {
+          const itemPrice = productInfo.price * product.quantity;
+          const itemWeight = productInfo.weight * product.quantity;
+          estimatedPrice += itemPrice;
+          estimatedWeight += itemWeight;
+          productDetails.push({
+            ...productInfo,
+            quantity: product.quantity,
+            totalPrice: itemPrice,
+            totalWeight: itemWeight
+          });
+        }
+      });
+
+      const estimatedShipping = calculateShippingPrice(estimatedWeight);
+
+      console.log('💡 Estimation côté frontend:');
+      console.log(`• Prix total: ${estimatedPrice / 100}$`);
+      console.log(`• Poids total: ${estimatedWeight}g`);
+      console.log(`• Frais livraison: ${estimatedShipping / 100}$`);
+      console.log('• Détails:', productDetails);
+
+      const payload = { products };
+      console.log('🚀 Appel API avec payload:', payload);
+
+      try {
+        const res = await fetch(`${API_BASE}/order`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          redirect: 'manual'
+        });
+        
+        console.log('📡 Réponse API:', res.status, res.statusText);
+
+        if (res.status === 0 || res.status === 302) {
+          // Redirection 302 détectée → succès
+          const orderId = extractOrderIdFromRedirect(res);
+          alert(`✅ Commande créée ! ID: ${orderId || 'Inconnue'}\n\n💡 Estimation: ${estimatedPrice / 100}$ + livraison ${estimatedShipping / 100}$ = ${(estimatedPrice + estimatedShipping) / 100}$`);
+          // Récupérer automatiquement la commande créée
+          if (orderId) {
+            setTimeout(() => getOrder(orderId), 500);
+          }
+        } else {
+          const text = await res.text();
+          let data;
+          try {
+            data = JSON.parse(text);
+          } catch {
+            data = { message: text };
+          }
+          alert(`❌ Erreur ${res.status}: ${data.message || text}`);
+        }
+      } catch (error) {
+        alert(`❌ Erreur : ${error.message}`);
+      }
+    };
+
+    // Fonction utilitaire pour extraire l'ID de commande depuis la redirection
+    const extractOrderIdFromRedirect = (response) => {
+      try {
+        const location = response.headers.get('location') || response.url;
+        const match = location.match(/\/order\/(\d+)/);
+        return match ? parseInt(match[1]) : null;
+      } catch {
+        return null;
+      }
+    };
+
+    // 1) Afficher la liste des produits
+    const listProductsBtn = document.getElementById('listProductsBtn');
+    if (listProductsBtn) {
+      listProductsBtn.onclick = async () => {
+        try {
+          const res = await fetch(`${API_BASE}/api/products`);
+          const data = await res.json();
+          const productsOutput = document.getElementById('productsOutput');
+          if (productsOutput) {
+            productsOutput.textContent = JSON.stringify(data, null, 2);
+          }
+        } catch (error) {
+          alert(`❌ Erreur : ${error.message}`);
+        }
+      };
+    }
+
+    // 6) Afficher une commande
+    const getOrder = async (orderId) => {
+      try {
+        const res = await fetch(`${API_BASE}/order/${orderId}`);
+        const data = await res.json();
+        
+        if (res.ok) {
+          const order = data.order || data;
+          let status = '📦 En attente';
+          if (order.order_status === 'paid') status = '✅ Payée';
+          else if (order.order_status === 'payment_processing') status = '⏳ Paiement en cours';
+          
+          alert(`📊 Commande ${orderId} (${status})\n💰 Total: ${order.total_price}$\n🚚 Livraison: ${order.shipping_price / 100}$\n🧾 Avec taxes: ${order.total_price_tax ? order.total_price_tax + '$' : 'Non calculées'}`);
+        } else if (res.status === 202) {
+          alert('⏳ Commande en cours de traitement (paiement asynchrone)');
+        } else {
+          alert(`❌ Erreur ${res.status}: ${data.message}`);
+        }
+      } catch (error) {
+        alert(`❌ Erreur : ${error.message}`);
+      }
+    };
+
+    const getOrderForm = document.getElementById('getOrderForm');
+    if (getOrderForm) {
+      getOrderForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const orderId = parseInt(formData.get('order_id'));
+      await getOrder(orderId);
+      };
+    }
+
+    // 7) Ajouter une adresse
+    const shippingForm = document.getElementById('shippingForm');
+    if (shippingForm) {
+      shippingForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const orderId = parseInt(formData.get('order_id'));
+      
+      const payload = {
+        shipping_information: {
+          address: formData.get('address'),
+          city: formData.get('city'),
+          province: formData.get('province'),
+          postal_code: formData.get('postal_code'),
+          country: formData.get('country')
+        }
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}/order/${orderId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const text = await res.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = { message: text };
+        }
+
+        if (res.ok) {
+          const province = formData.get('province');
+          const taxRate = { 'QC': '15%', 'ON': '13%', 'AB': '5%', 'BC': '12%', 'NS': '14%' }[province] || '0%';
+          alert(`✅ Adresse ajoutée !\n🏠 Province: ${province} (Taxe ${taxRate})\n💡 Les taxes ont été recalculées automatiquement.`);
+          
+          // Afficher automatiquement la commande mise à jour
+          setTimeout(() => getOrder(orderId), 500);
+        } else {
+          if (res.status === 409) {
+            alert('❌ Impossible de modifier une commande déjà payée.');
+          } else {
+            const err = data.errors?.shipping_information || {};
+            alert(`❌ Erreur adresse : ${err.province || err.address || data.message || text}`);
+          }
+        }
+      } catch (error) {
+        alert(`❌ Erreur : ${error.message}`);
+        }
+      }
+    };
+
+    // 9) Payer une commande
+    const paymentForm = document.getElementById('paymentForm');
+    if (paymentForm) {
+      paymentForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const orderId = parseInt(formData.get('order_id'));
+      
+      const payload = {
+        credit_card: {
+          credit_card_number: formData.get('credit_card_number'),
+          credit_card_expiry_date: formData.get('credit_card_expiry_date'),
+          credit_card_cvv: formData.get('credit_card_cvv')
+        }
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}/order/${orderId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const text = await res.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = { message: text };
+        }
+
+        if (res.ok) {
+          alert('✅ Paiement effectué avec succès !');
+          // Afficher la commande payée
+          setTimeout(() => getOrder(orderId), 500);
+        } else if (res.status === 202) {
+          alert('⏳ Paiement en cours de traitement...\n💡 Statut: 202 Accepted (traitement asynchrone)\n🔄 Consultez la commande dans quelques secondes.');
+        } else {
+          if (res.status === 409) {
+            alert('❌ Impossible de modifier une commande déjà payée.');
+          } else {
+            const err = data.errors?.order || {};
+            alert(`❌ Erreur paiement : ${err.name || data.message || text}`);
+          }
+        }
+      } catch (error) {
+        alert(`❌ Erreur : ${error.message}`);
+        }
+      };
+    }
+    
+    }); // Fin du DOMContentLoaded
+  </script>
+</body>
+</html>

@@ -3,11 +3,13 @@
 env/
 venv/
 
-# Fichiers temporaires
+# Fichiers temporaires et cache Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.py[cod]
+*$py.class
 
 # Fichiers de base de données
 *.db
@@ -20,10 +22,32 @@ __pycache__/
 .env
 .env.*
 
-# Fichiers divers
+# Fichiers système
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE et éditeurs
+.vscode/settings.json
+.vscode/launch.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Build et distribution
 *.egg-info/
 *.egg
+build/
+dist/
 *.bak
-*.swp
+
+# Fichiers temporaires spécifiques au projet
+/tmp/test_*.json
+/tmp/test_*.html
+*.tmp
 

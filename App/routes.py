@@ -1,18 +1,20 @@
-from flask import Blueprint, jsonify, request, redirect, url_for, render_template
+from flask import Blueprint, jsonify, request, redirect, url_for, render_template, send_from_directory
 from peewee import DoesNotExist 
-from App.models import Order, DoesNotExist
-from .models import Product, Order
+from .models import Product, Order, OrderProduct
 import json 
 import requests
+import os
 
 # Définition du Blueprint
 bp = Blueprint('routes', __name__)
 
-# ---------------------------------
-# GET / - Liste des produits
-# ---------------------------------
 @bp.route('/', methods=['GET'])
 def get_products():
+    # Si la requête demande HTML (navigateur), afficher la page de test
+    if request.headers.get('Accept', '').startswith('text/html'):
+        return render_template('index.html')
+    
+    # Sinon, retourner le JSON des produits (API)
     products = []
     for product in Product.select():
         products.append({
@@ -112,14 +114,23 @@ def get_order(order_id):
     shipping_info = json.loads(order.shipping_information) if order.shipping_information else {}
     credit_card = json.loads(order.credit_card) if order.credit_card else {}
     transaction = json.loads(order.transaction) if order.transaction else {}
+    # Déterminer le statut de la commande
+    order_status = 'unpaid'  # Par défaut
+    if order.paid:
+        order_status = 'paid'
+    elif is_payment_in_progress(redis_client, order_id):
+        order_status = 'payment_processing'
+
     response = {
         "order": {
             "id": order.id,
             "total_price": order.total_price,
+            "total_price_tax": order.total_price_tax,
             "email": order.email,
             "credit_card": credit_card if order.paid else {},
             "shipping_information": shipping_info,
             "paid": order.paid,
+            "order_status": order_status,
             "transaction": transaction if order.paid else {},
             "products": products,
             "shipping_price": order.shipping_price
@@ -209,4 +220,82 @@ def update_order(order_id):
 
 @bp.route('/test', methods=['GET'])
 def test_page():
+    """Page de test pour l'interface HTML."""
     return render_template('index.html')
+
+@bp.route('/simple', methods=['GET'])
+def simple_test():
+    """Page de test ultra-simple pour créer une commande."""
+    try:
+        with open('test_simple.html', 'r', encoding='utf-8') as f:
+            return f.read()
+    except FileNotFoundError:
+        return '''<!DOCTYPE html>
+<html><head><title>Test Simple</title></head>
+<body>
+<h1>🧪 TEST SIMPLE - Créer une Commande</h1>
+<form id="simpleForm">
+<p><label>ID Produit: <input type="number" id="productId" value="1" min="1"></label></p>
+<p><label>Quantité: <input type="number" id="quantity" value="2" min="1"></label></p>
+<button type="button" onclick="createOrder()">✅ CRÉER COMMANDE</button>
+</form>
+<div id="result"></div>
+<script>
+async function createOrder() {
+  const resultDiv = document.getElementById('result');
+  resultDiv.innerHTML = '⏳ Création en cours...';
+  
+  try {
+    const payload = {
+      products: [{
+        id: parseInt(document.getElementById('productId').value),
+        quantity: parseInt(document.getElementById('quantity').value)
+      }]
+    };
+    
+    console.log('Payload:', payload);
+    
+    const response = await fetch('/order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    console.log('Response:', response.status, response.url);
+    
+    if (response.ok || response.redirected) {
+      const orderIdMatch = response.url.match(/\\/order\\/(\\d+)/);
+      const orderId = orderIdMatch ? orderIdMatch[1] : 'Inconnue';
+      resultDiv.innerHTML = `<h3>✅ SUCCÈS !</h3><p>Commande créée avec ID: ${orderId}</p>`;
+    } else {
+      const text = await response.text();
+      resultDiv.innerHTML = `<h3>❌ ERREUR</h3><p>Statut: ${response.status}</p><p>${text}</p>`;
+    }
+  } catch (error) {
+    console.error('Erreur:', error);
+    resultDiv.innerHTML = `<h3>💥 ERREUR</h3><p>${error.message}</p>`;
+  }
+}
+</script>
+</body></html>'''
+
+@bp.route('/api/products', methods=['GET'])
+def api_products():
+    """Route API dédiée pour les produits (toujours JSON)."""
+    products = []
+    for product in Product.select():
+        products.append({
+            "name": product.name,
+            "id": product.id,
+            "in_stock": product.in_stock,
+            "description": product.description,
+            "price": product.price,
+            "weight": product.weight,
+            "image": product.image
+        })
+    return jsonify({"products": products}), 200
+
+@bp.route('/simple', methods=['GET'])
+def test_simple():
+    """Page de test ultra-simple pour créer une commande."""
+    return send_from_directory(os.path.join(os.path.dirname(__file__), '..'), 'test_simple.html')

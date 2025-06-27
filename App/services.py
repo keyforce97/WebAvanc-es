@@ -77,11 +77,13 @@ def process_payment(order_id, credit_card):
     order_data = {
         'id': order.id,
         'total_price': order.total_price,
+        'total_price_tax': order.total_price_tax,
         'shipping_price': order.shipping_price,
         'email': order.email,
         'credit_card': json.loads(order.credit_card) if order.credit_card else {},
         'shipping_information': json.loads(order.shipping_information) if order.shipping_information else {},
         'paid': order.paid,
+        'order_status': 'paid' if order.paid else 'unpaid',
         'transaction': json.loads(order.transaction) if order.transaction else {},
         'products': [
             {'id': op.product.id, 'quantity': op.quantity}

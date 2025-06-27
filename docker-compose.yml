@@ -21,6 +21,7 @@ services:
       - REDIS_URL=redis://redis:6379
       - FLASK_APP=app.py
       - FLASK_ENV=development
+      - SECRET_KEY=dev-secret-key-change-in-production
     depends_on:
       - db
       - redis
@@ -34,6 +35,25 @@ services:
     image: redis:5
     ports:
       - "6379:6379"
+
+  worker:
+    build: .
+    command: flask worker
+    environment:
+      - DB_HOST=db
+      - DB_USER=user
+      - DB_PASSWORD=pass
+      - DB_PORT=5432
+      - DB_NAME=api8inf349
+      - REDIS_URL=redis://redis:6379
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
+    depends_on:
+      - redis
+      - db
+    volumes:
+      - .:/app
+    restart: unless-stopped
 
 volumes:
   pgdata:
