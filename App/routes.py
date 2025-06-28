@@ -10,11 +10,12 @@ bp = Blueprint('routes', __name__)
 
 @bp.route('/', methods=['GET'])
 def get_products():
-    # Si la requête demande HTML (navigateur), afficher la page de test
+    # Si la requête demande HTML (navigateur) on affiche la page de test
     if request.headers.get('Accept', '').startswith('text/html'):
         return render_template('index.html')
     
-    # Sinon, retourner le JSON des produits (API)
+    # Sinon JSON des produits 
+
     products = []
     for product in Product.select():
         products.append({
@@ -28,9 +29,11 @@ def get_products():
         })
     return jsonify({"products": products}), 200
 
-# ---------------------------------
-# POST /order - Créer une commande
-# ---------------------------------
+
+
+
+# COMMANDE CREATION
+
 @bp.route('/order', methods=['POST'])
 def create_order():
     data = request.get_json()
@@ -66,19 +69,27 @@ def create_order():
         order_products.append((prod, p['quantity']))
         total_price += prod.price * p['quantity']
         total_weight += prod.weight * p['quantity']
-    # Calcul du shipping
+   
+   
+   
+    # Calcul du poids total et du prix de livraison
     if total_weight <= 500:
         shipping_price = 500
     elif total_weight <= 2000:
         shipping_price = 1000
     else:
         shipping_price = 2500
+    
+    
+    
     # Création de la commande
     order = Order.create(
         shipping_price=shipping_price,
         total_price=total_price,
         paid=False
     )
+
+
     # Ajout des produits à la commande
     from .models import OrderProduct
     for prod, qty in order_products:
@@ -88,6 +99,8 @@ def create_order():
 def is_payment_in_progress(redis_client, order_id):
     return redis_client.get(f'order:{order_id}:paying')
 
+
+
 @bp.route('/order/<int:order_id>', methods=['GET'])
 def get_order(order_id):
     from .redis_client import redis_client
@@ -95,6 +108,8 @@ def get_order(order_id):
     # Vérifier si paiement en cours (flag Redis)
     if is_payment_in_progress(redis_client, order_id):
         return '', 202
+    
+    
     # Vérifier d'abord dans Redis
     cached = redis_client.get(f'order:{order_id}')
     if cached:
@@ -105,6 +120,10 @@ def get_order(order_id):
         order = Order.get(Order.id == order_id)
     except DoesNotExist:
         return jsonify({"errors": {"order": {"code": "not-found", "name": "La commande n'existe pas"}}}), 404
+    
+    
+    
+    
     # Récupérer les produits
     from .models import OrderProduct
     products = [
@@ -114,6 +133,10 @@ def get_order(order_id):
     shipping_info = json.loads(order.shipping_information) if order.shipping_information else {}
     credit_card = json.loads(order.credit_card) if order.credit_card else {}
     transaction = json.loads(order.transaction) if order.transaction else {}
+   
+   
+   
+   
     # Déterminer le statut de la commande
     order_status = 'unpaid'  # Par défaut
     if order.paid:

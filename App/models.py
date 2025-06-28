@@ -10,7 +10,6 @@ DB_PORT = os.environ.get('DB_PORT', '5432')
 DB_NAME = os.environ.get('DB_NAME', 'database')
 
 # Connexion à la base PostgreSQL
-# Utilise PostgresqlExtDatabase pour la compatibilité JSON, etc.
 db = PostgresqlExtDatabase(
     DB_NAME,
     user=DB_USER,
@@ -32,6 +31,8 @@ class Product(BaseModel):
     weight      = IntegerField()
     image       = CharField()
 
+# La table Order représente une commande par un utilisateur.
+# Chaque commande peut contenir plusieurs produits via la table OrderProduct.
 class Order(BaseModel):
     id                   = AutoField()
     email                = CharField(null=True)
@@ -45,7 +46,8 @@ class Order(BaseModel):
 
 class OrderProduct(BaseModel):
     """
-    Table de liaison pour gérer N produits → 1 commande.
+    Table de liaison pour gérer plsuieurs produits en une seule commande.
+    Chaque ligne représente un produit dans une commande avec sa quantité.
     """
     id       = AutoField()
     order    = ForeignKeyField(Order, backref='order_products')

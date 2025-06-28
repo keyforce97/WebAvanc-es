@@ -1,123 +1,24 @@
-# 🛒 API de Gestion de Commandes
+# API 8INF349 - Système de Gestion de Commandes
 
-Application web complète pour la gestion de commandes avec API Flask et interface utilisateur.
 
-## 🚀 Démarrage rapide
 
-### Prérequis
-- Docker et Docker Compose installés
-- Ports 5002, 5432 et 6379 disponibles
-
-### Lancement
+# 1. Démarrage de l'application 
 ```bash
-./start.sh
+# Arrêter les conteneurs existants si ça a été démarré avant
+docker-compose down
+
+# Démarrer les services
+docker-compose up -d
+
+# Initialiser la base de données
+docker-compose exec api flask init-db
 ```
 
-### Arrêt
-```bash
-# Arrêt simple
-./stop.sh
+# 2. Accès à l'applicationConfig
+- ConfigInterface webConfig : http://localhost:5002
+- ConfigAPI produitsConfig : http://localhost:5002/api/products
 
-# Arrêt avec nettoyage du cache
-./stop.sh clean
-```
-
-### Nettoyage du cache (manuel)
-```bash
-# Nettoyage complet du cache Docker
-./clean.sh
-```
-
-> **💡 Note :** Le nettoyage du cache est maintenant manuel pour vous donner le contrôle total. Utilisez `./clean.sh` si vous rencontrez des problèmes ou souhaitez libérer de l'espace disque.
-
-## 🌐 Interface
-
-Une fois démarré, accédez à l'application :
-- **Interface web** : http://localhost:5002/
-- **API produits** : http://localhost:5002/api/products
-- **API racine** : http://localhost:5002/
-
-## 📋 Fonctionnalités
-
-### Interface utilisateur
-- Gestion des produits
-- Création de commandes
-- Ajout d'adresses de livraison
-- Processus de paiement
-- Calcul automatique des taxes et frais d'expédition
-
-### API REST
-- `GET /api/products` - Liste des produits
-- `POST /order` - Création de commande
-- `GET /order/{id}` - Consultation de commande
-- `PUT /order/{id}` - Modification (adresse/paiement)
-
-## 💰 Règles de calcul
-
-### Frais d'expédition
-- ≤ 500g : 5,00 $ CAD
-- ≤ 2kg : 10,00 $ CAD  
-- > 2kg : 25,00 $ CAD
-
-### Taxes provinciales
-- QC : 15% | ON : 13% | AB : 5% | BC : 12% | NS : 14%
-- Autres provinces : 0%
-
-## 🔧 Architecture
-
-- **Backend** : Flask + PostgreSQL + Redis
-- **Frontend** : HTML/JS/CSS
-- **Worker** : RQ (Redis Queue) pour paiements asynchrones
-- **Base de données** : PostgreSQL (données principales) + Redis (cache et queues)
-- **Déploiement** : Docker Compose
-
-## 📁 Structure du projet
-
-```
-WebAvanc-es/
-├── start.sh              # Script de démarrage
-├── stop.sh               # Script d'arrêt
-├── clean.sh              # Script de nettoyage du cache
-├── app.py                # Application Flask principale
-├── requirements.txt      # Dépendances Python
-├── docker-compose.yml    # Configuration Docker
-├── Dockerfile           # Image Docker
-├── App/                 # Module application
-│   ├── models.py        # Modèles de base de données
-│   ├── routes.py        # Routes API
-│   ├── services.py      # Logique métier
-│   ├── worker.py        # Worker RQ
-│   ├── config.py        # Configuration
-│   └── redis_client.py  # Client Redis
-├── static/              # Ressources statiques
-│   ├── css/style.css
-│   └── js/app.js
-└── templates/           # Templates HTML
-    └── index.html       # Interface utilisateur
-```
-
-## 🛠️ Commandes utiles
-
-```bash
-# Voir les logs
-docker-compose logs -f api
-docker-compose logs -f worker
-
-# Vérifier l'état des services
-docker-compose ps
-
-# Accès direct aux conteneurs
-docker-compose exec api bash
-docker-compose exec db psql -U user -d api8inf349
-docker-compose exec redis redis-cli
-```
-
-## 🧪 Test de l'API
-
-### Via l'interface web
-Accédez à http://localhost:5002/ pour une interface complète.
-
-### Via curl
+# Config3. Tests API via curlConfig
 ```bash
 # Lister les produits
 curl http://localhost:5002/api/products
@@ -127,10 +28,55 @@ curl -X POST http://localhost:5002/order \
   -H "Content-Type: application/json" \
   -d '{"products":[{"id":1,"quantity":2}]}'
 
-# Consulter une commande
+# Voir une commande (remplacer 1 par l'ID obtenu)
 curl http://localhost:5002/order/1
+
+
+# Config4. Commandes utilesConfig
+```bash
+# Voir les logs de l'API
+docker-compose logs -f api
+
+# Voir les logs du worker
+docker-compose logs -f worker
+
+# Voir tous les logs
+docker-compose logs -f
+
+# Redémarrer un service
+docker-compose restart api
+
+# Arrêter l'application
+docker-compose down
+
+# Nettoyer complètement (conteneurs + volumes + images)
+docker-compose down -v --rmi all
 ```
 
----
+# Structure du projet
 
-*Projet fonctionnel - Version finale optimisée*
+```
+📁 WebAvanc-es/
+├── 📄 app.py                    # Fichier principal (Flask app)
+├── 📄 docker-compose.yml       # Configuration Docker (PostgreSQL + Redis + API + Worker)
+├── 📄 Dockerfile              # Image Docker pour l'application
+├── 📄 requirements.txt        # Dépendances Python
+├── 📄 README.md               # Documentation
+├── 📄 .gitignore              # Fichiers ignorés par Git
+│
+├── 📁 App/                    # Module principal de l'application
+│   ├── 📄 __init__.py         # Initialisation du module Flask
+│   ├── 📄 config.py           # Configuration (DB, Redis, etc.)
+│   ├── 📄 models.py           # Modèles de données (Peewee ORM)
+│   ├── 📄 routes.py           # Routes API (/order, /products, etc.)
+│   ├── 📄 services.py         # Logique métier (paiement, calculs)
+│   ├── 📄 redis_client.py     # Configuration Redis
+│   └── 📄 worker.py           # Worker RQ pour paiements asynchrones
+│
+└── 📁 templates/              # Interface utilisateur
+    └── 📄 index.html          # Interface web de test
+```
+
+
+
+

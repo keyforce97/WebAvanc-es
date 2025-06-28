@@ -59,7 +59,6 @@ def process_payment(order_id, credit_card):
     
     try:
         print(f"[WORKER] Paiement simulé pour order_id={order_id}")
-        # Ici, tu pourrais faire un vrai appel HTTP vers un processeur de paiement
         # Simuler une réussite
         transaction = {
             'id': f'txn_{order_id}_{int(time.time())}',
@@ -76,12 +75,15 @@ def process_payment(order_id, credit_card):
             'expiration_year': expiry_year,
             'expiration_month': expiry_month
         }
-        
+        # Mise à jour de la commande
+
         order.paid = True
         order.credit_card = json.dumps(credit_card_info)
         order.transaction = json.dumps(transaction)
         order.save()
         print(f"[WORKER] Paiement réussi pour order_id={order_id}")
+    
+    
     except Exception as e:
         print(f"[WORKER] Erreur paiement pour order_id={order_id} : {e}")
         # En cas d'erreur, stocker l'erreur dans transaction

@@ -6,6 +6,8 @@ from App.config import Config
 import click
 from flask.cli import with_appcontext
 
+
+
 def create_app():
     # Création de l'app Flask
     app = Flask(__name__)
@@ -14,21 +16,19 @@ def create_app():
     # Enregistrement du Blueprint
     app.register_blueprint(routes_bp)
     
-    # Commande CLI pour initialiser la base
+    #  initialisation de la base de données
     @app.cli.command("init-db")
     @with_appcontext
     def init_db():
-        """Initialise la base de données (tables)."""
         with db:
             db.create_tables([Product, Order, OrderProduct])
         fetch_and_store_products()
         print("Base de données initialisée et produits importés !")
-    
-    # Commande CLI pour lancer le worker RQ
+
+    # Commande pour lancer le worker RQ
     @app.cli.command("worker")
     @with_appcontext
     def worker():
-        """Lance le worker RQ pour traiter les tâches en arrière-plan."""
         from App.redis_client import redis_client
         from rq import Worker
         import sys
@@ -43,10 +43,10 @@ def create_app():
     
     return app
 
-# Création de l'instance pour Gunicorn
+#instance pour Gunicorn
 app = create_app()
 
-# Point d'entrée pour les tests locaux
+# pour les tests locaux
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)
 

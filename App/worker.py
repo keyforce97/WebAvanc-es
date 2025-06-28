@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""
-Worker RQ pour traiter les tâches de paiement en arrière-plan.
-Ce script peut être lancé via `flask worker` ou directement avec `python -m App.worker`
-"""
+
+# Worker RQ pour traiter les tâches de paiement en arrière-plan.
+
+
+
 
 import os
 import sys
@@ -12,7 +13,6 @@ from rq import Worker
 def run_worker():
     """Lance le worker RQ."""
     try:
-        # Créer et démarrer le worker directement avec la connexion Redis
         worker = Worker(['default'], connection=redis_client)
         print("Worker RQ démarré. En attente de tâches...")
         worker.work()
